@@ -203,8 +203,19 @@ function configureDomain() {
     echo -e "static.$base_domain\tCNAME\t$base_domain"
   } | column -s $'\t' -t
   echo ""
-  echo "Press Enter when done..."
-  read -r
+  echo "Note: The IP shown ($public_ip) is this server's public IP. If you're using"
+  echo "a load balancer, CDN, or proxy, point your DNS to that service instead."
+  echo ""
+  echo "DNS changes can take up to 72 hours to propagate in worst-case scenarios,"
+  echo "but typically complete within a few minutes. Your SSL certificate will be"
+  echo "automatically generated once DNS is ready - no action needed on your part."
+  echo ""
+  echo -n "Type 'y' when you have added the DNS records: "
+  read -r dns_confirmed
+  while [[ ! "$dns_confirmed" =~ ^[Yy]$ ]]; do
+    echo -n "Please type 'y' to confirm: "
+    read -r dns_confirmed
+  done
 
   # restart Caddy
   sudo systemctl restart caddy

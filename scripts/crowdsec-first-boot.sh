@@ -23,24 +23,29 @@ fi
 if [ ! -f "$MARKER_CROWDSEC_STARTED" ]; then
     systemctl start crowdsec
 
-    # Wait for CrowdSec service to be fully active (up to 60 seconds)
-    echo "Waiting for CrowdSec service..."
-    for i in {1..30}; do
-        if systemctl is-active --quiet crowdsec; then
-            # Service is active, now wait a moment for LAPI to initialize
-            sleep 2
-            if cscli lapi status 2>&1 | grep -qi "online\|url"; then
-                echo "CrowdSec Local API is online."
-                touch "$MARKER_CROWDSEC_STARTED"
-                break
-            fi
-        fi
-        if [ $i -eq 30 ]; then
-            echo "Warning: Timed out waiting for CrowdSec LAPI. Continuing anyway..."
+    # Wait for CrowdSec LAPI to be fully ready (up to 120 seconds)
+    # On first boot, CrowdSec needs time to initialize its database
+    echo -n "Waiting for CrowdSec Local API..."
+    LAPI_READY=false
+    for i in {1..60}; do
+        # Check if LAPI is responding (exit code 0 = success)
+        if cscli lapi status >/dev/null 2>&1; then
+            echo ""
+            echo "CrowdSec Local API is online."
+            LAPI_READY=true
             touch "$MARKER_CROWDSEC_STARTED"
+            break
         fi
+        echo -n "."
         sleep 2
     done
+
+    if [ "$LAPI_READY" = false ]; then
+        echo ""
+        echo "Warning: CrowdSec LAPI not responding after 120 seconds."
+        echo "This may be normal on first boot. Continuing with setup..."
+        touch "$MARKER_CROWDSEC_STARTED"
+    fi
 else
     # Ensure CrowdSec is running even if marker exists
     if ! systemctl is-active --quiet crowdsec; then

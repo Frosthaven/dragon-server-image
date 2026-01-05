@@ -5,7 +5,16 @@
 ## First Time Boot
 
 When you first SSH into your new server, you'll be guided through an
-interactive setup process. Here's what to expect:
+interactive setup process. You can log in as either `root` or `dragon` to
+complete the setup - both users have access to the setup wizard.
+
+```bash
+# Either works for first-time setup
+ssh root@your-server-ip
+ssh dragon@your-server-ip
+```
+
+Here's what to expect:
 
 ### Step 1: Domain Configuration
 

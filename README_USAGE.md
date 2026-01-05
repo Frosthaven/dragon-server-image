@@ -9,14 +9,14 @@
 You will need to provide an SSH key when spinning up server
 instances based on this image, as password login is disabled by default.
 
-On first boot, you'll log in as `root`. After completing the [first-time setup](README_FIRST_BOOT.md),
-root SSH access is disabled and you'll use the `dragon` user instead:
+On first boot, you can log in as either `root` or `dragon` to complete the setup:
 
 ```bash
-# First boot only
+# First boot (either works)
 ssh root@your-server-ip
+ssh dragon@your-server-ip
 
-# After first-time setup is complete
+# After first-time setup is complete (root login is disabled)
 ssh dragon@your-server-ip
 ```
 

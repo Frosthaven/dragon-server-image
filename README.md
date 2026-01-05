@@ -51,3 +51,7 @@ like Kubernetes are recommended.
     - [x] Ensure we copy the ssh key to the new user on first boot
 - [x] Issue with storage config permissions in Caddyfile
 - [ ] Look into Podman auto-discovery progress for Caddy
+    - [x] Podman is supported via Docker-compatible API socket (requires `CADDY_DOCKER_NO_SCOPE=true`)
+    - [ ] [#707](https://github.com/lucaslorentz/caddy-docker-proxy/issues/707) - Caddyfile regenerates every polling interval (affects multi-network containers, breaks websockets)
+    - [ ] [#703](https://github.com/lucaslorentz/caddy-docker-proxy/issues/703) - Same config/domain errors with Podman
+    - [ ] No official Podman documentation in caddy-docker-proxy README

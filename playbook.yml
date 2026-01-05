@@ -512,6 +512,13 @@
                 }
             }
 
+            # Catch-all for undefined domains - serves 404 error page
+            :443 {
+                root * /var/www/static/errors
+                rewrite * /404.html
+                file_server
+            }
+
             # Error page snippet - can be imported by site blocks
             (error_pages) {
                 handle_errors {

@@ -24,5 +24,16 @@ packer build ./digitalocean;
 
 ### Amazon Web Services AMI
 
-not yet implemented
+*Requires AWS credentials. Set the following environment variables:*
+- `AWS_ACCESS_KEY_ID` - Your AWS access key
+- `AWS_SECRET_ACCESS_KEY` - Your AWS secret key
+- `AWS_REGION` (optional) - Target region, defaults to `us-east-1`
+
+```shell
+packer init ./aws;
+packer build ./aws;
+```
+
+The build uses the latest Ubuntu 24.04 LTS AMI from Canonical as the base image.
+Once built, you can copy the AMI to other regions via the AWS Console or CLI.
 

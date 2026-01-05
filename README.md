@@ -41,10 +41,10 @@ like Kubernetes are recommended.
 ---
 
 
-## TODO - working example
+## Planned
 
 - [x] Harden server with [CrowdSec](https://www.crowdsec.net/)
-- [ ] Default error pages for static server
+- [x] Default error pages for static server
 - [x] Create first-boot experience to collect domain and email for caddy
 - [x] Add caddy configs for automatic dns (comment out by default)
 - [x] [Disable root login](https://www.digitalocean.com/community/tutorials/how-to-disable-root-login-on-ubuntu-20-04)

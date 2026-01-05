@@ -176,6 +176,32 @@ security status and any running containers.
    links have been added that point to the Caddy logs and systemd service file.
 3. A static file server hosts from `/var/www/static` by default.
 
+#### Error Pages
+
+Custom error pages are included for 404 (Not Found) and 5xx (Server Error)
+responses. These are located in `/var/www/static/errors/` and are automatically
+used by the static file server.
+
+**For Docker containers:** By default, containers handle their own error
+responses. If a container is unreachable (stopped or crashed), Caddy will return
+a 502 error. To use the custom error pages for your containers, add the
+following label to your docker-compose:
+
+```yaml
+labels:
+    caddy: example.com
+    caddy.reverse_proxy: "{{upstreams 80}}"
+    caddy.import: error_pages
+```
+
+The `error_pages` snippet handles:
+- **404** - File/page not found
+- **5xx** - Server errors (500, 502, 503, etc.)
+
+**Customizing error pages:** Edit the HTML files in `/var/www/static/errors/`:
+- `/var/www/static/errors/404.html`
+- `/var/www/static/errors/500.html`
+
 ### Docker Container Configuration
 
 [Docker Compose Documentation](https://docs.docker.com/compose/)

@@ -37,8 +37,16 @@
         loop:
           - "/var/www"
           - "/var/www/static"
+          - "/var/www/static/errors"
           - "/var/www/containers"
           - "/var/www/containers/whoami"
+      - name: "Copy Error Pages"
+        copy:
+          src: "files/errors/"
+          dest: "/var/www/static/errors/"
+          owner: "{{ ansible_user }}"
+          group: "{{ ansible_user }}"
+          mode: 0644
 
 - name: "Configure UFW Firewall"
   hosts: all
@@ -435,9 +443,23 @@
                 }
             }
 
+            # Error page snippet - can be imported by site blocks
+            (error_pages) {
+                handle_errors {
+                    @404 expression {err.status_code} == 404
+                    @5xx expression {err.status_code} >= 500 && {err.status_code} < 600
+
+                    root * /var/www/static/errors
+                    rewrite @404 /404.html
+                    rewrite @5xx /500.html
+                    file_server
+                }
+            }
+
             static.example.com {
                 root * /var/www/static
                 file_server
+                import error_pages
             }
 
           owner: caddy

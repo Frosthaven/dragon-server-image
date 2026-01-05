@@ -117,18 +117,22 @@
   become: true
   tasks:
     - block:
-      - name: "Download Go 1.25"
+      - name: "Get latest Go version"
+        shell: curl -s https://go.dev/VERSION?m=text | head -1
+        register: go_version
+        changed_when: false
+      - name: "Download latest Go"
         get_url:
-          url: https://go.dev/dl/go1.25.0.linux-amd64.tar.gz
-          dest: /tmp/go1.25.0.linux-amd64.tar.gz
+          url: "https://go.dev/dl/{{ go_version.stdout }}.linux-amd64.tar.gz"
+          dest: "/tmp/{{ go_version.stdout }}.linux-amd64.tar.gz"
           mode: '0644'
       - name: "Remove existing Go installation"
         file:
           path: /usr/local/go
           state: absent
-      - name: "Extract Go 1.25"
+      - name: "Extract Go"
         unarchive:
-          src: /tmp/go1.25.0.linux-amd64.tar.gz
+          src: "/tmp/{{ go_version.stdout }}.linux-amd64.tar.gz"
           dest: /usr/local
           remote_src: yes
       - name: "Add Go to system PATH"
@@ -144,7 +148,7 @@
           state: link
       - name: "Clean up Go tarball"
         file:
-          path: /tmp/go1.25.0.linux-amd64.tar.gz
+          path: "/tmp/{{ go_version.stdout }}.linux-amd64.tar.gz"
           state: absent
 
 - name: "Install Docker"

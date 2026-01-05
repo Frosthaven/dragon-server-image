@@ -19,19 +19,21 @@ if [ -f "$MARKER_FIRST_BOOT_COMPLETE" ]; then
     exit 0
 fi
 
-echo "Initializing CrowdSec security engine..."
-
 # Step 1: Start CrowdSec engine
 if [ ! -f "$MARKER_CROWDSEC_STARTED" ]; then
     systemctl start crowdsec
 
-    # Wait for LAPI to be available (up to 60 seconds)
-    echo "Waiting for CrowdSec Local API..."
+    # Wait for CrowdSec service to be fully active (up to 60 seconds)
+    echo "Waiting for CrowdSec service..."
     for i in {1..30}; do
-        if cscli lapi status 2>/dev/null | grep -q "online"; then
-            echo "CrowdSec Local API is online."
-            touch "$MARKER_CROWDSEC_STARTED"
-            break
+        if systemctl is-active --quiet crowdsec; then
+            # Service is active, now wait a moment for LAPI to initialize
+            sleep 2
+            if cscli lapi status 2>&1 | grep -qi "online\|url"; then
+                echo "CrowdSec Local API is online."
+                touch "$MARKER_CROWDSEC_STARTED"
+                break
+            fi
         fi
         if [ $i -eq 30 ]; then
             echo "Warning: Timed out waiting for CrowdSec LAPI. Continuing anyway..."
@@ -43,7 +45,7 @@ else
     # Ensure CrowdSec is running even if marker exists
     if ! systemctl is-active --quiet crowdsec; then
         systemctl start crowdsec
-        sleep 2
+        sleep 3
     fi
     echo "CrowdSec engine already started."
 fi
@@ -63,8 +65,8 @@ if [ ! -f "$MARKER_BOUNCER_REGISTERED" ]; then
         exit 1
     fi
 
-    # Update bouncer config with new API key
-    sed -i "s/^api_key:.*/api_key: $API_KEY/" /etc/crowdsec/bouncers/crowdsec-firewall-bouncer.yaml
+    # Update bouncer config with new API key (use | as delimiter since API key may contain /)
+    sed -i "s|^api_key:.*|api_key: $API_KEY|" /etc/crowdsec/bouncers/crowdsec-firewall-bouncer.yaml
     
     touch "$MARKER_BOUNCER_REGISTERED"
 else

@@ -121,7 +121,7 @@ if [ ! -f "$MARKER_ROOT_LOGIN_DISABLED" ]; then
     fi
 
     # Restart SSH daemon
-    systemctl restart sshd
+    systemctl restart ssh
 
     echo "${GREEN}Root SSH login has been disabled.${NORMAL}"
     

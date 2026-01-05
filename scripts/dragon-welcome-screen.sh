@@ -97,10 +97,13 @@ function configureCrowdSec() {
     echo "To get your enrollment key:"
     echo "  1. Sign up at ${CYAN}https://app.crowdsec.net/signup${NORMAL}"
     echo "  2. Go to Security Engines page"
-    echo "  3. Copy the enrollment command (starts with 'sudo cscli console enroll')"
+    echo "  3. Copy the enrollment key from the command shown"
     echo ""
-    echo "Enter your enrollment key (or press Enter to skip):"
+    echo "Paste your enrollment key or the full enrollment command:"
     read -r enrollment_key
+    
+    # Strip "sudo cscli console enroll " prefix if user pasted the full command
+    enrollment_key="${enrollment_key#sudo cscli console enroll }"
     
     if [ -n "$enrollment_key" ]; then
       echo "Enrolling with CrowdSec Console..."

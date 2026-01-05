@@ -135,12 +135,12 @@ If you choose to enroll, you'll see:
 To get your enrollment key:
   1. Sign up at https://app.crowdsec.net/signup
   2. Go to Security Engines page
-  3. Copy the enrollment command (starts with 'sudo cscli console enroll')
+  3. Copy the enrollment key from the command shown
 
-Enter your enrollment key (or press Enter to skip):
+Paste your enrollment key or the full enrollment command:
 ```
 
-Paste your enrollment key and press Enter. After successful enrollment:
+Paste your enrollment key (or the full command) and press Enter. After successful enrollment:
 
 ```
 Enrollment request sent!

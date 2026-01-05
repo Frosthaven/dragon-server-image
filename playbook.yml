@@ -552,6 +552,11 @@
           name: "{{ ansible_user }}"
           groups: caddy
           append: yes
+      - name: "Add user 'dragon' to 'caddy' group"
+        user:
+          name: dragon
+          groups: caddy
+          append: yes
       - name: "Create Docker Network 'caddy'"
         docker_network:
           name: caddy

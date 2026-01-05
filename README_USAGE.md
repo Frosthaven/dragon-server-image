@@ -9,6 +9,19 @@
 You will need to provide an SSH key when spinning up server
 instances based on this image, as password login is disabled by default.
 
+On first boot, you'll log in as `root`. After completing the first-time setup,
+root SSH access is disabled and you'll use the `dragon` user instead:
+
+```bash
+# First boot only
+ssh root@your-server-ip
+
+# After first-time setup is complete
+ssh dragon@your-server-ip
+```
+
+The `dragon` user has passwordless sudo access for administrative tasks.
+
 ### First Time Boot
 
 When you first SSH into your new server, you'll be guided through an
@@ -50,7 +63,43 @@ Press Enter when done...
 The setup will display the DNS records you need to create. Add these to your
 DNS provider (Cloudflare, Route53, DigitalOcean, etc.) before continuing.
 
-#### Step 4: CrowdSec Security Setup
+#### Step 4: Dragon User Setup
+
+```
+――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――
+Dragon User Setup
+――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――
+
+Copying SSH keys to dragon user...
+SSH keys copied successfully.
+
+You can now SSH into this server as: ssh dragon@123.45.67.89
+
+Root SSH login will be disabled for security.
+
+WARNING: The DigitalOcean Recovery Console requires a password to log in.
+If you do not set a password for the 'dragon' user, you will lose access
+to the Recovery Console. This console is only needed if SSH becomes
+completely unavailable (e.g., firewall misconfiguration, SSH daemon crash).
+
+Normal SSH access will continue to work with your SSH key regardless of
+whether you set a password.
+
+Set a password for 'dragon' user for Recovery Console access? (y/N):
+```
+
+This step:
+1. Copies your SSH keys from `root` to the `dragon` user
+2. Optionally sets a password for Recovery Console access (recommended)
+3. Disables root SSH login for security
+
+**About the Recovery Console password:**
+- The DigitalOcean Recovery Console is a browser-based terminal for emergencies
+- It requires a password (SSH keys don't work there)
+- You only need it if SSH becomes completely unavailable
+- If you skip this, you can set a password later with `sudo passwd dragon`
+
+#### Step 5: CrowdSec Security Setup
 
 ```
 Initializing CrowdSec security engine...
@@ -104,7 +153,7 @@ Next steps:
 Press Enter to continue...
 ```
 
-#### Step 5: Setup Complete
+#### Step 6: Setup Complete
 
 ```
 Configuration complete! You can test your server at https://whoami.example.com

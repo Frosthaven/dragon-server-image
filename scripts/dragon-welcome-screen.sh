@@ -178,6 +178,9 @@ function configureServer() {
   # restart Caddy
   systemctl restart caddy
 
+  # Configure dragon user (copy SSH keys, optional password, disable root login)
+  sudo /usr/local/bin/dragon-user-setup.sh
+
   # Configure CrowdSec security
   configureCrowdSec
 

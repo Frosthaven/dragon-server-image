@@ -45,6 +45,14 @@
   become: true
   tasks:
     - block:
+      - name: "Set UFW default incoming policy to deny"
+        ufw:
+          direction: incoming
+          default: deny
+      - name: "Set UFW default outgoing policy to allow"
+        ufw:
+          direction: outgoing
+          default: allow
       - name: "Allow SSH access on port 22"
         ufw:
           rule: allow
@@ -63,6 +71,12 @@
           to_port: 443
           protocol: tcp
           comment: "Allow HTTPS traffic"
+      - name: "Enable UFW logging"
+        ufw:
+          logging: "on"
+      - name: "Enable UFW"
+        ufw:
+          state: enabled
       - name: Reload UFW firewall
         ufw:
           state: reloaded
@@ -110,6 +124,107 @@
           update_cache: true
       - name: "Set Docker Context to default"
         shell: docker context use default
+
+- name: "Create Dragon User"
+  hosts: all
+  become: true
+  tasks:
+    - block:
+      - name: "Create 'dragon' user with sudo and docker access"
+        user:
+          name: dragon
+          groups: sudo,docker
+          shell: /bin/bash
+          create_home: yes
+          state: present
+      - name: "Create .ssh directory for dragon user"
+        file:
+          path: /home/dragon/.ssh
+          state: directory
+          owner: dragon
+          group: dragon
+          mode: '0700'
+      - name: "Configure passwordless sudo for dragon user"
+        copy:
+          dest: /etc/sudoers.d/dragon
+          content: |
+            dragon ALL=(ALL) NOPASSWD:ALL
+          owner: root
+          group: root
+          mode: '0440'
+          validate: 'visudo -cf %s'
+
+- name: "Configure SSH Hardening"
+  hosts: all
+  become: true
+  tasks:
+    - block:
+      - name: "Create sshd_config.d directory if it doesn't exist"
+        file:
+          path: /etc/ssh/sshd_config.d
+          state: directory
+          owner: root
+          group: root
+          mode: '0755'
+      - name: "Create SSH hardening configuration"
+        copy:
+          dest: /etc/ssh/sshd_config.d/99-hardening.conf
+          content: |
+            # SSH Hardening Configuration
+            # Note: PermitRootLogin is set to 'yes' during image build
+            # and will be changed to 'no' on first boot after SSH keys are copied to dragon user
+            PermitRootLogin yes
+            MaxAuthTries 3
+            LoginGraceTime 20
+            X11Forwarding no
+            PermitUserEnvironment no
+            AllowAgentForwarding no
+            AllowTcpForwarding no
+            LogLevel VERBOSE
+            DebianBanner no
+            MaxStartups 10:30:60
+            MaxSessions 10
+          owner: root
+          group: root
+          mode: '0644'
+
+- name: "Configure Kernel Security"
+  hosts: all
+  become: true
+  tasks:
+    - block:
+      - name: "Create kernel security sysctl configuration"
+        copy:
+          dest: /etc/sysctl.d/99-security.conf
+          content: |
+            # Kernel Security Hardening
+            # Enable TCP SYN Cookie Protection
+            net.ipv4.tcp_syncookies = 1
+            # Enable Reverse Path Filtering (anti-spoofing)
+            net.ipv4.conf.all.rp_filter = 1
+            net.ipv4.conf.default.rp_filter = 1
+            # Disable ICMP Redirects
+            net.ipv4.conf.all.accept_redirects = 0
+            net.ipv4.conf.default.accept_redirects = 0
+            net.ipv6.conf.all.accept_redirects = 0
+            net.ipv6.conf.default.accept_redirects = 0
+            # Don't send ICMP redirects
+            net.ipv4.conf.all.send_redirects = 0
+            net.ipv4.conf.default.send_redirects = 0
+            # Disable Source Routing
+            net.ipv4.conf.all.accept_source_route = 0
+            net.ipv4.conf.default.accept_source_route = 0
+            net.ipv6.conf.all.accept_source_route = 0
+            net.ipv6.conf.default.accept_source_route = 0
+            # Ignore broadcast ICMP requests
+            net.ipv4.icmp_echo_ignore_broadcasts = 1
+            # Disable magic SysRq key
+            kernel.sysrq = 0
+          owner: root
+          group: root
+          mode: '0644'
+      - name: "Apply sysctl settings"
+        command: sysctl --system
 
 - name: "Install CrowdSec"
   hosts: all
@@ -182,6 +297,14 @@
         copy:
           src: "scripts/crowdsec-first-boot.sh"
           dest: "/usr/local/bin/crowdsec-first-boot.sh"
+          owner: root
+          group: root
+          mode: 0755
+
+      - name: "Copy Dragon user setup script"
+        copy:
+          src: "scripts/dragon-user-setup.sh"
+          dest: "/usr/local/bin/dragon-user-setup.sh"
           owner: root
           group: root
           mode: 0755

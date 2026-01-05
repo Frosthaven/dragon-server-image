@@ -14,9 +14,9 @@
 ## Use Case
 
 This server is designed to be long-lived and low maintenance. It is ideal for
-containerized projects that do not require scaling consideration. For projects
-that do require scaling, container orchestration tools like Kubernetes are
-recommended.
+containerized projects that do not require horizontal scaling consideration. For
+projects that do require horizontal scaling, container orchestration tools
+like Kubernetes are recommended.
 
 ## Included Software
 
@@ -47,7 +47,7 @@ recommended.
 - [ ] Default error pages for static server
 - [x] Create first-boot experience to collect domain and email for caddy
 - [x] Add caddy configs for automatic dns (comment out by default)
-- [ ] [Disable root login](https://www.digitalocean.com/community/tutorials/how-to-disable-root-login-on-ubuntu-20-04)
-    - [ ] Ensure we copy the ssh key to the new user on first boot
+- [x] [Disable root login](https://www.digitalocean.com/community/tutorials/how-to-disable-root-login-on-ubuntu-20-04)
+    - [x] Ensure we copy the ssh key to the new user on first boot
 - [x] Issue with storage config permissions in Caddyfile
 - [ ] Look into Podman auto-discovery progress for Caddy

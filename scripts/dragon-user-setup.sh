@@ -53,15 +53,15 @@ echo "Root SSH login will be disabled for security."
 echo ""
 
 # Step 2: Prompt for Recovery Console password
-echo "${YELLOW}WARNING: The DigitalOcean Recovery Console requires a password to log in.${NORMAL}"
+echo "${YELLOW}WARNING: Cloud provider recovery consoles require a password to log in.${NORMAL}"
 echo "If you do not set a password for the 'dragon' user, you will lose access"
-echo "to the Recovery Console. This console is only needed if SSH becomes"
+echo "to the recovery console. This console is only needed if SSH becomes"
 echo "completely unavailable (e.g., firewall misconfiguration, SSH daemon crash)."
 echo ""
 echo "Normal SSH access will continue to work with your SSH key regardless of"
 echo "whether you set a password."
 echo ""
-echo -n "Set a password for 'dragon' user for Recovery Console access? (y/N): "
+echo -n "Set a password for 'dragon' user for recovery console access? (y/N): "
 read -r set_password
 
 if [[ "$set_password" =~ ^[Yy]$ ]]; then
@@ -72,7 +72,7 @@ if [[ "$set_password" =~ ^[Yy]$ ]]; then
     echo "${GREEN}Password set successfully.${NORMAL}"
 else
     echo ""
-    echo "Skipping password setup. Recovery Console will not be available."
+    echo "Skipping password setup. Recovery console will not be available."
     echo "You can set a password later with: ${YELLOW}sudo passwd dragon${NORMAL}"
 fi
 

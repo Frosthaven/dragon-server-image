@@ -77,15 +77,15 @@ You can now SSH into this server as: ssh dragon@123.45.67.89
 
 Root SSH login will be disabled for security.
 
-WARNING: The DigitalOcean Recovery Console requires a password to log in.
+WARNING: Cloud provider recovery consoles require a password to log in.
 If you do not set a password for the 'dragon' user, you will lose access
-to the Recovery Console. This console is only needed if SSH becomes
+to the recovery console. This console is only needed if SSH becomes
 completely unavailable (e.g., firewall misconfiguration, SSH daemon crash).
 
 Normal SSH access will continue to work with your SSH key regardless of
 whether you set a password.
 
-Set a password for 'dragon' user for Recovery Console access? (y/N):
+Set a password for 'dragon' user for recovery console access? (y/N):
 ```
 
 This step:
@@ -93,9 +93,9 @@ This step:
 2. Optionally sets a password for Recovery Console access (recommended)
 3. Disables root SSH login for security
 
-**About the Recovery Console password:**
-- The DigitalOcean Recovery Console is a browser-based terminal for emergencies
-- It requires a password (SSH keys don't work there)
+**About the recovery console password:**
+- Cloud providers offer browser-based recovery consoles for emergencies
+- They require a password (SSH keys don't work there)
 - You only need it if SSH becomes completely unavailable
 - If you skip this, you can set a password later with `sudo passwd dragon`
 

@@ -40,6 +40,7 @@
           - "/var/www/static/errors"
           - "/var/www/containers"
           - "/var/www/containers/whoami"
+          - "/var/lib/dragon"
       - name: "Copy Error Pages"
         copy:
           src: "files/errors/"

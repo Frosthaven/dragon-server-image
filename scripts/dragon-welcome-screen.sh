@@ -13,6 +13,17 @@ RED=$'\e[31m'
 MAGENTA=$'\e[35m'
 GREEN=$'\e[32m'
 
+# Marker files for tracking setup progress
+MARKER_DIR="/var/lib/dragon"
+MARKER_DOMAIN_CONFIGURED="$MARKER_DIR/.domain-configured"
+MARKER_USER_SETUP_COMPLETE="$MARKER_DIR/.user-setup-complete"
+MARKER_CROWDSEC_CONFIGURED="$MARKER_DIR/.crowdsec-configured"
+MARKER_SETUP_COMPLETE="/startup_configured"
+
+function ensureMarkerDir() {
+  mkdir -p "$MARKER_DIR"
+}
+
 function showBanner() {
   echo "${GREEN}――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――${NORMAL}"
   echo "🐲 DRAGON SERVER: ${CYAN}https://github.com/frosthaven/dragon-server"
@@ -138,9 +149,12 @@ function configureCrowdSec() {
     echo "  ${YELLOW}sudo cscli console enroll <YOUR_ENROLLMENT_KEY>${NORMAL}"
     echo ""
   fi
+  
+  # Mark CrowdSec configuration as complete
+  touch "$MARKER_CROWDSEC_CONFIGURED"
 }
 
-function configureServer() {
+function configureDomain() {
   showBanner
 
   echo "Welcome to your dragon-server instance! Please complete the following steps to get started."
@@ -152,13 +166,27 @@ function configureServer() {
 
   if [ -z "$base_domain" ] || [ -z "$admin_email" ]; then
     clear
-    configureServer
+    configureDomain
+    return
   fi
 
-  # replace all example email and domain name placeholders with the user's input
-  sed -i "s/example@example.com/$admin_email/g" /var/www/_caddy/Caddyfile
-  sed -i "s/example.com/$base_domain/g" /var/www/_caddy/Caddyfile
-  sed -i "s/example.com/$base_domain/g" /var/www/containers/whoami/docker-compose.yml
+  # Check if Caddyfile still has placeholder values before running sed
+  # This makes the operation idempotent
+  if grep -q "example@example.com" /var/www/_caddy/Caddyfile; then
+    sed -i "s/example@example.com/$admin_email/g" /var/www/_caddy/Caddyfile
+  fi
+  
+  if grep -q "example.com" /var/www/_caddy/Caddyfile; then
+    sed -i "s/example.com/$base_domain/g" /var/www/_caddy/Caddyfile
+  fi
+  
+  if grep -q "example.com" /var/www/containers/whoami/docker-compose.yml; then
+    sed -i "s/example.com/$base_domain/g" /var/www/containers/whoami/docker-compose.yml
+  fi
+
+  # Save the configured domain for reference and to detect if already configured
+  echo "$base_domain" > "$MARKER_DIR/domain"
+  echo "$admin_email" > "$MARKER_DIR/email"
 
   # start the whoami container
   cd /var/www/containers/whoami && docker compose up -d
@@ -180,15 +208,48 @@ function configureServer() {
 
   # restart Caddy
   systemctl restart caddy
+  
+  # Mark domain configuration as complete
+  touch "$MARKER_DOMAIN_CONFIGURED"
+}
 
-  # Configure dragon user (copy SSH keys, optional password, disable root login)
-  sudo /usr/local/bin/dragon-user-setup.sh
+function configureServer() {
+  ensureMarkerDir
+  
+  # Step 1: Domain and email configuration
+  if [ ! -f "$MARKER_DOMAIN_CONFIGURED" ]; then
+    configureDomain
+  else
+    echo "${GREEN}Domain configuration already complete. Resuming setup...${NORMAL}"
+    echo ""
+  fi
 
-  # Configure CrowdSec security
-  configureCrowdSec
+  # Step 2: Dragon user setup (copy SSH keys, optional password, disable root login)
+  if [ ! -f "$MARKER_USER_SETUP_COMPLETE" ]; then
+    sudo /usr/local/bin/dragon-user-setup.sh
+    touch "$MARKER_USER_SETUP_COMPLETE"
+  else
+    echo "${GREEN}Dragon user setup already complete. Resuming setup...${NORMAL}"
+    echo ""
+  fi
 
-  # create a file to indicate that the script has been run
-  touch /startup_configured
+  # Step 3: CrowdSec security configuration
+  if [ ! -f "$MARKER_CROWDSEC_CONFIGURED" ]; then
+    configureCrowdSec
+  else
+    echo "${GREEN}CrowdSec configuration already complete. Resuming setup...${NORMAL}"
+    echo ""
+  fi
+
+  # Mark overall setup as complete
+  touch "$MARKER_SETUP_COMPLETE"
+
+  # Get configured domain for final message
+  if [ -f "$MARKER_DIR/domain" ]; then
+    base_domain=$(cat "$MARKER_DIR/domain")
+  else
+    base_domain="yourdomain.com"
+  fi
 
   clear
   echo "Configuration complete! You can test your server at ${CYAN}https://whoami.$base_domain${NORMAL}"
@@ -199,7 +260,7 @@ function configureServer() {
 # main *************************************************************************
 # ******************************************************************************
 
-if [ -f /startup_configured ]; then
+if [ -f "$MARKER_SETUP_COMPLETE" ]; then
   clear
   showWelcomeScreen
 else

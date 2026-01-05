@@ -109,9 +109,43 @@
           - python3-pip
           - python3-setuptools
           - pipx
-          - golang-go
           state: latest
           update_cache: true
+
+- name: "Install Go"
+  hosts: all
+  become: true
+  tasks:
+    - block:
+      - name: "Download Go 1.25"
+        get_url:
+          url: https://go.dev/dl/go1.25.0.linux-amd64.tar.gz
+          dest: /tmp/go1.25.0.linux-amd64.tar.gz
+          mode: '0644'
+      - name: "Remove existing Go installation"
+        file:
+          path: /usr/local/go
+          state: absent
+      - name: "Extract Go 1.25"
+        unarchive:
+          src: /tmp/go1.25.0.linux-amd64.tar.gz
+          dest: /usr/local
+          remote_src: yes
+      - name: "Add Go to system PATH"
+        copy:
+          dest: /etc/profile.d/go.sh
+          content: |
+            export PATH=$PATH:/usr/local/go/bin
+          mode: '0644'
+      - name: "Create Go bin symlink"
+        file:
+          src: /usr/local/go/bin/go
+          dest: /usr/bin/go
+          state: link
+      - name: "Clean up Go tarball"
+        file:
+          path: /tmp/go1.25.0.linux-amd64.tar.gz
+          state: absent
 
 - name: "Install Docker"
   hosts: all

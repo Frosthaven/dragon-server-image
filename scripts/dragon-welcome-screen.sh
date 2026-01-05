@@ -207,7 +207,7 @@ function configureDomain() {
   read -r
 
   # restart Caddy
-  systemctl restart caddy
+  sudo systemctl restart caddy
   
   # Mark domain configuration as complete
   touch "$MARKER_DOMAIN_CONFIGURED"

@@ -196,6 +196,20 @@
           group: root
           mode: '0440'
           validate: 'visudo -cf %s'
+      - name: "Set ownership of /var/lib/dragon to dragon user"
+        file:
+          path: /var/lib/dragon
+          state: directory
+          owner: dragon
+          group: dragon
+          recurse: yes
+      - name: "Set ownership of /var/www/containers to dragon user"
+        file:
+          path: /var/www/containers
+          state: directory
+          owner: dragon
+          group: dragon
+          recurse: yes
 
 - name: "Configure SSH Hardening"
   hosts: all

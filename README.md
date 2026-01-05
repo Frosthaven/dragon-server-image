@@ -26,6 +26,11 @@ recommended.
   - [caddy-dns/digitalocean](https://github.com/caddy-dns/digitalocean)
   - [caddyserver/transform-encoder](https://github.com/caddyserver/transform-encoder)
   - [lucaslorentz/caddy-docker-proxy](https://github.com/lucaslorentz/caddy-docker-proxy/plugin/v2)
+- [CrowdSec](https://www.crowdsec.net/) - Security engine with crowd-sourced threat intelligence
+  - [crowdsec-firewall-bouncer](https://docs.crowdsec.net/u/bouncers/firewall/) - Firewall-level IP blocking
+  - [crowdsecurity/linux](https://hub.crowdsec.net/author/crowdsecurity/collections/linux) - Linux system protection
+  - [crowdsecurity/sshd](https://hub.crowdsec.net/author/crowdsecurity/collections/sshd) - SSH brute force protection
+  - [crowdsecurity/caddy](https://hub.crowdsec.net/author/crowdsecurity/collections/caddy) - Caddy log analysis and HTTP attack detection
 - [Docker](https://www.docker.com/)
 
 ## Documentation
@@ -38,7 +43,7 @@ recommended.
 
 ## TODO - working example
 
-- [ ] Harden server with [CrowdSec](https://www.crowdsec.net/) (maybe look at [os-caddy](https://docs.opnsense.org/manual/how-tos/caddy.html))
+- [x] Harden server with [CrowdSec](https://www.crowdsec.net/)
 - [ ] Default error pages for static server
 - [x] Create first-boot experience to collect domain and email for caddy
 - [x] Add caddy configs for automatic dns (comment out by default)

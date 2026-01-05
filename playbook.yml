@@ -111,6 +111,81 @@
       - name: "Set Docker Context to default"
         shell: docker context use default
 
+- name: "Install CrowdSec"
+  hosts: all
+  become: true
+  tasks:
+    - block:
+      - name: "Add CrowdSec repository"
+        shell: curl -s https://install.crowdsec.net | bash
+        args:
+          creates: /etc/apt/sources.list.d/crowdsec_crowdsec.list
+
+      - name: "Install CrowdSec security engine"
+        apt:
+          name: crowdsec
+          state: present
+          update_cache: yes
+
+      - name: "Install CrowdSec firewall bouncer (iptables)"
+        apt:
+          name: crowdsec-firewall-bouncer-iptables
+          state: present
+
+      - name: "Install CrowdSec Linux collection"
+        command: cscli collections install crowdsecurity/linux
+        register: linux_collection
+        changed_when: "'overwrite' not in linux_collection.stderr"
+
+      - name: "Install CrowdSec SSH collection"
+        command: cscli collections install crowdsecurity/sshd
+        register: sshd_collection
+        changed_when: "'overwrite' not in sshd_collection.stderr"
+
+      - name: "Install CrowdSec Caddy collection"
+        command: cscli collections install crowdsecurity/caddy
+        register: caddy_collection
+        changed_when: "'overwrite' not in caddy_collection.stderr"
+
+      - name: "Create Caddy log acquisition config"
+        copy:
+          dest: /etc/crowdsec/acquis.d/caddy.yaml
+          content: |
+            filenames:
+              - /var/log/caddy/*.log
+            labels:
+              type: caddy
+          owner: root
+          group: root
+          mode: 0644
+
+      - name: "Configure firewall bouncer for Docker (add DOCKER-USER chain)"
+        blockinfile:
+          path: /etc/crowdsec/bouncers/crowdsec-firewall-bouncer.yaml
+          marker: "# {mark} ANSIBLE MANAGED - iptables chains config"
+          insertafter: "^#iptables_chains:"
+          block: |
+            iptables_chains:
+              - INPUT
+              - DOCKER-USER
+
+      - name: "Stop CrowdSec services (will start on first boot)"
+        systemd:
+          name: "{{ item }}"
+          state: stopped
+          enabled: yes
+        loop:
+          - crowdsec
+          - crowdsec-firewall-bouncer
+
+      - name: "Copy CrowdSec first-boot script"
+        copy:
+          src: "scripts/crowdsec-first-boot.sh"
+          dest: "/usr/local/bin/crowdsec-first-boot.sh"
+          owner: root
+          group: root
+          mode: 0755
+
 - name: "Install Python"
   hosts: all
   become: true

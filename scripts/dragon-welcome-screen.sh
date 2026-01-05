@@ -20,21 +20,121 @@ function showBanner() {
   echo ""
 }
 
+function showSecurityStatus() {
+  echo "${GREEN}Security Status:${NORMAL}"
+  
+  # Check if CrowdSec is running
+  if systemctl is-active --quiet crowdsec; then
+    crowdsec_status="${GREEN}running${NORMAL}"
+  else
+    crowdsec_status="${RED}stopped${NORMAL}"
+  fi
+  
+  # Check if firewall bouncer is running
+  if systemctl is-active --quiet crowdsec-firewall-bouncer; then
+    bouncer_status="${GREEN}running${NORMAL}"
+  else
+    bouncer_status="${RED}stopped${NORMAL}"
+  fi
+  
+  # Get blocked IP count
+  blocked_count=$(sudo cscli decisions list -o raw 2>/dev/null | tail -n +2 | wc -l || echo "0")
+  
+  echo "  CrowdSec Engine     $crowdsec_status"
+  echo "  Firewall Bouncer    $bouncer_status"
+  echo "  Blocked IPs         ${YELLOW}$blocked_count${NORMAL}"
+  echo ""
+}
+
 function showWelcomeScreen() {
   cd /var/www/containers || exit
   showBanner
 
-  echo "${MAGENTA}$(lsb_release -a)${NORMAL}"
+  echo "${MAGENTA}$(lsb_release -a 2>/dev/null)${NORMAL}"
   echo ""
   echo "${MAGENTA}Caddy version $(caddy version)${NORMAL}"
-  echo "${MAGENTA}$(docker --version)${NORMAL})"
+  echo "${MAGENTA}$(docker --version)${NORMAL}"
   echo ""
+  
+  showSecurityStatus
+  
   echo "Caddy Server Files    ${YELLOW}/var/www/_caddy/${NORMAL}"
   echo "Hosted Containers     ${YELLOW}/var/www/containers${NORMAL}"
   echo "Hosted Static Files   ${YELLOW}/var/www/static${NORMAL}"
   echo ""
   echo "${BLUE}$(sudo docker ps)${NORMAL}"
   echo ""
+}
+
+function configureCrowdSec() {
+  echo ""
+  echo "${GREEN}――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――${NORMAL}"
+  echo "${GREEN}CrowdSec Security Setup${NORMAL}"
+  echo "${GREEN}――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――${NORMAL}"
+  echo ""
+  
+  # Initialize CrowdSec (register bouncer, start services)
+  echo "Initializing CrowdSec security engine..."
+  sudo /usr/local/bin/crowdsec-first-boot.sh
+  
+  echo ""
+  echo "CrowdSec is now protecting your server with:"
+  echo "  - SSH brute force protection"
+  echo "  - HTTP/Caddy attack detection"
+  echo "  - Crowd-sourced threat intelligence"
+  echo ""
+  
+  # Ask about console enrollment
+  echo "Would you like to enroll in the CrowdSec Console?"
+  echo "The console provides a web dashboard to monitor your server's security."
+  echo "(You can always do this later - see README_USAGE.md for instructions)"
+  echo ""
+  echo -n "Enroll in CrowdSec Console? (y/N): "
+  read -r enroll_choice
+  
+  if [[ "$enroll_choice" =~ ^[Yy]$ ]]; then
+    echo ""
+    echo "To get your enrollment key:"
+    echo "  1. Sign up at ${CYAN}https://app.crowdsec.net/signup${NORMAL}"
+    echo "  2. Go to Security Engines page"
+    echo "  3. Copy the enrollment command (starts with 'sudo cscli console enroll')"
+    echo ""
+    echo "Enter your enrollment key (or press Enter to skip):"
+    read -r enrollment_key
+    
+    if [ -n "$enrollment_key" ]; then
+      echo "Enrolling with CrowdSec Console..."
+      if sudo cscli console enroll "$enrollment_key"; then
+        echo ""
+        echo "${GREEN}Enrollment request sent!${NORMAL}"
+        echo ""
+        echo "Next steps:"
+        echo "  1. Go to ${CYAN}https://app.crowdsec.net${NORMAL}"
+        echo "  2. Accept the enrollment request for this engine"
+        echo "  3. Run: ${YELLOW}sudo systemctl restart crowdsec${NORMAL}"
+        echo ""
+        echo "Press Enter to continue..."
+        read -r
+      else
+        echo ""
+        echo "${RED}Enrollment failed. You can try again later with:${NORMAL}"
+        echo "  ${YELLOW}sudo cscli console enroll <YOUR_ENROLLMENT_KEY>${NORMAL}"
+        echo ""
+        echo "Press Enter to continue..."
+        read -r
+      fi
+    else
+      echo ""
+      echo "Skipping console enrollment. You can enroll later with:"
+      echo "  ${YELLOW}sudo cscli console enroll <YOUR_ENROLLMENT_KEY>${NORMAL}"
+      echo ""
+    fi
+  else
+    echo ""
+    echo "Skipping console enrollment. You can enroll later with:"
+    echo "  ${YELLOW}sudo cscli console enroll <YOUR_ENROLLMENT_KEY>${NORMAL}"
+    echo ""
+  fi
 }
 
 function configureServer() {
@@ -72,11 +172,14 @@ function configureServer() {
     echo -e "static.$base_domain\tCNAME\t$base_domain"
   } | column -s $'\t' -t
   echo ""
-  echo "Press Enter to when done..."
+  echo "Press Enter when done..."
   read -r
 
   # restart Caddy
   systemctl restart caddy
+
+  # Configure CrowdSec security
+  configureCrowdSec
 
   # create a file to indicate that the script has been run
   touch /startup_configured

@@ -9,6 +9,110 @@
 You will need to provide an SSH key when spinning up server
 instances based on this image, as password login is disabled by default.
 
+### First Time Boot
+
+When you first SSH into your new server, you'll be guided through an
+interactive setup process. Here's what to expect:
+
+#### Step 1: Domain Configuration
+
+```
+Welcome to your dragon-server instance! Please complete the following steps to get started.
+
+Enter the base domain name (e.g. example.com):
+```
+
+Enter your root domain (e.g., `example.com`). This will be used to configure
+Caddy and the example containers.
+
+#### Step 2: Administrator Email
+
+```
+Enter the server administrator email address:
+```
+
+Enter your email address. This is used for SSL certificate notifications from
+Let's Encrypt.
+
+#### Step 3: DNS Records
+
+```
+Add the following DNS records to your domain registrar:
+
+Domain Name          Type   Value
+example.com          A      123.45.67.89
+whoami.example.com   CNAME  example.com
+static.example.com   CNAME  example.com
+
+Press Enter when done...
+```
+
+The setup will display the DNS records you need to create. Add these to your
+DNS provider (Cloudflare, Route53, DigitalOcean, etc.) before continuing.
+
+#### Step 4: CrowdSec Security Setup
+
+```
+Initializing CrowdSec security engine...
+CrowdSec Local API is online.
+Registering firewall bouncer...
+Starting firewall bouncer...
+CrowdSec initialized successfully.
+
+CrowdSec is now protecting your server with:
+  - SSH brute force protection
+  - HTTP/Caddy attack detection
+  - Crowd-sourced threat intelligence
+
+Would you like to enroll in the CrowdSec Console?
+The console provides a web dashboard to monitor your server's security.
+(You can always do this later - see README_USAGE.md for instructions)
+
+Enroll in CrowdSec Console? (y/N):
+```
+
+You have two options:
+
+**Option A: Skip enrollment (press Enter or type `n`)**
+
+CrowdSec will still protect your server, but you won't have access to the web
+dashboard. You can enroll later at any time (see [Console Enrollment](#console-enrollment-optional)).
+
+**Option B: Enroll now (type `y`)**
+
+If you choose to enroll, you'll see:
+
+```
+To get your enrollment key:
+  1. Sign up at https://app.crowdsec.net/signup
+  2. Go to Security Engines page
+  3. Copy the enrollment command (starts with 'sudo cscli console enroll')
+
+Enter your enrollment key (or press Enter to skip):
+```
+
+Paste your enrollment key and press Enter. After successful enrollment:
+
+```
+Enrollment request sent!
+
+Next steps:
+  1. Go to https://app.crowdsec.net
+  2. Accept the enrollment request for this engine
+  3. Run: sudo systemctl restart crowdsec
+
+Press Enter to continue...
+```
+
+#### Step 5: Setup Complete
+
+```
+Configuration complete! You can test your server at https://whoami.example.com
+```
+
+You'll then see the welcome screen with your server status, including CrowdSec
+security status and any running containers.
+
 ### Caddy Server
 
 [Caddy Documentation](https://caddyserver.com/docs)
@@ -51,3 +155,107 @@ networks:
 
 An example is located at `/var/www/containers/whoami/docker-compose.yml`. You
 can learn more about `caddy-docker-proxy` labels [here](https://github.com/lucaslorentz/caddy-docker-proxy?tab=readme-ov-file#labels-to-caddyfile-conversion).
+
+### CrowdSec Security
+
+[CrowdSec Documentation](https://docs.crowdsec.net/)
+
+CrowdSec is a security engine that detects and blocks malicious IPs using
+behavioral analysis and crowd-sourced threat intelligence.
+
+#### Service Management
+
+CrowdSec runs as two systemd services:
+
+1. **CrowdSec Engine** (`crowdsec`):
+   - Start: `sudo systemctl start crowdsec`
+   - Stop: `sudo systemctl stop crowdsec`
+   - Status: `sudo systemctl status crowdsec`
+   - Restart: `sudo systemctl restart crowdsec`
+
+2. **Firewall Bouncer** (`crowdsec-firewall-bouncer`):
+   - Start: `sudo systemctl start crowdsec-firewall-bouncer`
+   - Stop: `sudo systemctl stop crowdsec-firewall-bouncer`
+   - Status: `sudo systemctl status crowdsec-firewall-bouncer`
+   - Restart: `sudo systemctl restart crowdsec-firewall-bouncer`
+
+#### Useful Commands
+
+```bash
+# View current decisions (blocked IPs)
+sudo cscli decisions list
+
+# View alerts
+sudo cscli alerts list
+
+# View installed collections/scenarios
+sudo cscli collections list
+sudo cscli scenarios list
+
+# Manually ban an IP (4 hour default)
+sudo cscli decisions add --ip 1.2.3.4
+
+# Manually unban an IP
+sudo cscli decisions delete --ip 1.2.3.4
+
+# View metrics
+sudo cscli metrics
+```
+
+#### Console Enrollment (Optional)
+
+The CrowdSec Console provides a free web dashboard to monitor your server's
+security across multiple instances. You can enroll during first-boot setup,
+or manually at any time:
+
+1. Sign up at [app.crowdsec.net](https://app.crowdsec.net/signup)
+2. Navigate to the Security Engines page
+3. Copy your enrollment key from the bottom of the page
+4. Run the enrollment command on your server:
+   ```bash
+   sudo cscli console enroll <YOUR_ENROLLMENT_KEY>
+   ```
+5. Go back to the console and accept the enrollment request
+6. Restart CrowdSec:
+   ```bash
+   sudo systemctl restart crowdsec
+   ```
+
+#### Configuration Files
+
+| File | Purpose |
+|------|---------|
+| `/etc/crowdsec/config.yaml` | Main CrowdSec configuration |
+| `/etc/crowdsec/acquis.d/` | Log acquisition configs (what logs to monitor) |
+| `/etc/crowdsec/bouncers/crowdsec-firewall-bouncer.yaml` | Firewall bouncer config |
+| `/var/log/crowdsec.log` | CrowdSec engine logs |
+| `/var/log/crowdsec-firewall-bouncer.log` | Firewall bouncer logs |
+
+#### Whitelisting IPs
+
+To prevent legitimate IPs from being blocked, add them to the whitelist:
+
+```bash
+# Create a whitelist file
+sudo nano /etc/crowdsec/parsers/s02-enrich/my-whitelist.yaml
+```
+
+Add the following content:
+
+```yaml
+name: my-whitelist
+description: "Whitelist for trusted IPs"
+whitelist:
+  reason: "Trusted IP addresses"
+  ip:
+    - "1.2.3.4"
+    - "5.6.7.8"
+  cidr:
+    - "10.0.0.0/8"
+```
+
+Then restart CrowdSec:
+
+```bash
+sudo systemctl restart crowdsec
+```

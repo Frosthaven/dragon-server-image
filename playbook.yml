@@ -487,12 +487,28 @@
                 #  hosted_zone_id ZABCD1EFGHIL // AWS hosted zone ID to update (optional)
                 #}
 
+                # Prefer Let's Encrypt, fall back to ZeroSSL
+                cert_issuer acme {
+                    dir https://acme-v02.api.letsencrypt.org/directory
+                }
+
                 servers :443 {
                   name https
                 }
 
                 servers :80 {
                   name http
+                }
+            }
+
+            # Handle ACME challenges on HTTP, redirect everything else to HTTPS
+            http:// {
+                @acme path /.well-known/acme-challenge/*
+                handle @acme {
+                    # Caddy's internal ACME solver handles this automatically
+                }
+                handle {
+                    redir https://{host}{uri} permanent
                 }
             }
 

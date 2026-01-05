@@ -512,8 +512,9 @@
                 }
             }
 
-            # Catch-all for undefined domains - serves 404 error page
-            :443 {
+            # Base domain handler - serves 404 for undefined routes
+            # This gets a certificate for the base domain (from default_sni)
+            example.com {
                 root * /var/www/static/errors
                 rewrite * /404.html
                 file_server

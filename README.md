@@ -36,6 +36,7 @@ like Kubernetes are recommended.
 ## Documentation
 
 - [Building the Image](README_BUILDING.md)
+- [First Boot Setup](README_FIRST_BOOT.md)
 - [Usage](README_USAGE.md)
 
 ---

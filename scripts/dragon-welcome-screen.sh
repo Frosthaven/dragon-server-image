@@ -118,7 +118,7 @@ function configureCrowdSec() {
     
     if [ -n "$enrollment_key" ]; then
       echo "Enrolling with CrowdSec Console..."
-      if sudo cscli console enroll "$enrollment_key"; then
+      if sudo cscli console enroll "$enrollment_key" --name "$(hostname)"; then
         echo ""
         echo "${GREEN}Enrollment request sent!${NORMAL}"
         echo ""

@@ -32,7 +32,7 @@ function showBanner() {
 }
 
 function showSecurityStatus() {
-  echo "${GREEN}\e]8;;https://app.crowdsec.net\e\\app.crowdsec.net\e]8;;\e\\ status:${NORMAL}"
+  echo -e "${GREEN}\e]8;;https://app.crowdsec.net\e\\\\app.crowdsec.net\e]8;;\e\\\\ status:${NORMAL}"
   
   # Check if CrowdSec is running
   if systemctl is-active --quiet crowdsec; then

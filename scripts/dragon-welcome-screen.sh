@@ -32,7 +32,7 @@ function showBanner() {
 }
 
 function showSecurityStatus() {
-  echo "${GREEN}app.crowdsec.net status:${NORMAL}"
+  echo "${GREEN}\e]8;;https://app.crowdsec.net\e\\app.crowdsec.net\e]8;;\e\\ status:${NORMAL}"
   
   # Check if CrowdSec is running
   if systemctl is-active --quiet crowdsec; then
@@ -276,8 +276,6 @@ function configureServer() {
   fi
 
   clear
-  echo "Configuration complete! You can test your server at ${CYAN}https://whoami.$base_domain${NORMAL}"
-  echo ""
   showWelcomeScreen
 }
 

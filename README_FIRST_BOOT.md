@@ -129,9 +129,19 @@ To get your enrollment key:
 Paste your enrollment key or the full enrollment command:
 ```
 
-Paste your enrollment key (or the full command) and press Enter. After successful enrollment:
+Paste your enrollment key (or the full command) and press Enter. You'll then be asked to confirm the security engine name:
 
 ```
+Security engine name: dragon-server-prime
+Press Enter to use this name, or type a new name:
+```
+
+The detected hostname is used by default. Press Enter to accept it, or type a custom name (useful on AWS where hostnames are auto-generated like `ip-172-31-16-42`).
+
+After successful enrollment:
+
+```
+Enrolling with CrowdSec Console as 'dragon-server-prime'...
 Enrollment request sent!
 
 Next steps:

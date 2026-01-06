@@ -117,8 +117,21 @@ function configureCrowdSec() {
     enrollment_key="${enrollment_key#sudo cscli console enroll }"
     
     if [ -n "$enrollment_key" ]; then
-      echo "Enrolling with CrowdSec Console..."
-      if sudo cscli console enroll "$enrollment_key" --name "$(hostname)"; then
+      # Detect hostname and allow user to change it
+      detected_hostname="$(hostname)"
+      echo ""
+      echo "Security engine name: ${YELLOW}$detected_hostname${NORMAL}"
+      echo -n "Press Enter to use this name, or type a new name: "
+      read -r custom_name
+      
+      if [ -n "$custom_name" ]; then
+        engine_name="$custom_name"
+      else
+        engine_name="$detected_hostname"
+      fi
+      
+      echo "Enrolling with CrowdSec Console as '${engine_name}'..."
+      if sudo cscli console enroll "$enrollment_key" --name "$engine_name"; then
         echo ""
         echo "${GREEN}Enrollment request sent!${NORMAL}"
         echo ""

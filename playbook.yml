@@ -308,6 +308,23 @@
           name: crowdsec-firewall-bouncer-iptables
           state: present
 
+      - name: "Remove bouncer registration created during package install"
+        shell: |
+          # The package creates a bouncer with name cs-firewall-bouncer-TIMESTAMP
+          # Read the bouncer ID from the .id file and delete it
+          if [ -f /etc/crowdsec/bouncers/crowdsec-firewall-bouncer.yaml.id ]; then
+            BOUNCER_ID=$(cat /etc/crowdsec/bouncers/crowdsec-firewall-bouncer.yaml.id)
+            cscli bouncers delete "$BOUNCER_ID" 2>/dev/null || true
+            rm -f /etc/crowdsec/bouncers/crowdsec-firewall-bouncer.yaml.id
+          fi
+        ignore_errors: yes
+
+      - name: "Reset bouncer API key to placeholder for first-boot registration"
+        lineinfile:
+          path: /etc/crowdsec/bouncers/crowdsec-firewall-bouncer.yaml
+          regexp: '^api_key:'
+          line: 'api_key: <API_KEY>'
+
       - name: "Install CrowdSec Linux collection"
         command: cscli collections install crowdsecurity/linux
         register: linux_collection

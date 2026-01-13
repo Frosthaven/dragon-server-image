@@ -267,14 +267,39 @@ EOF
 sudo dnf install -y alloy
 ```
 
-**Binary Install (any Linux):**
+**Binary Install (any Linux, including CentOS 7):**
+
+Use this method if the package manager installation fails (e.g., GPG signature issues on CentOS 7):
 
 ```bash
-# Download latest release
+# Download and install binary
+cd /tmp
 curl -LO https://github.com/grafana/alloy/releases/latest/download/alloy-linux-amd64.zip
 unzip alloy-linux-amd64.zip
 sudo mv alloy-linux-amd64 /usr/local/bin/alloy
 sudo chmod +x /usr/local/bin/alloy
+
+# Create directories
+sudo mkdir -p /etc/alloy /var/lib/alloy/data
+
+# Create systemd service (required for binary install)
+cat <<EOF | sudo tee /etc/systemd/system/alloy.service
+[Unit]
+Description=Grafana Alloy
+After=network.target
+
+[Service]
+Type=simple
+User=root
+ExecStart=/usr/local/bin/alloy run --storage.path=/var/lib/alloy/data /etc/alloy/config.alloy
+Restart=on-failure
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target
+EOF
+
+sudo systemctl daemon-reload
 ```
 
 ### Step 2: Configure Alloy

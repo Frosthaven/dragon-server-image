@@ -12,9 +12,9 @@ services:
     ports:
       - "127.0.0.1:8428:8428"
     labels:
+      # Note: basic_auth is configured in the Caddyfile directly since
+      # Docker Compose doesn't interpolate variables in label keys
       caddy: "${METRICS_DOMAIN}"
-      caddy.basicauth: "*"
-      caddy.basicauth.${METRICS_USER}: "${METRICS_PASSWORD_HASH}"
       caddy.reverse_proxy: "{{upstreams 8428}}"
 
   grafana:

@@ -295,7 +295,7 @@ Use this configuration template (adjust as needed for your server):
 
 // Node Exporter - System metrics (CPU, memory, disk, network, etc.)
 prometheus.exporter.unix "node" {
-  enable_collectors = [
+  set_collectors = [
     "cpu",
     "diskstats",
     "filesystem",
@@ -316,11 +316,21 @@ prometheus.exporter.unix "node" {
 
 // Scrape node metrics from unix exporter
 prometheus.scrape "node" {
-  targets    = prometheus.exporter.unix.node.targets
-  forward_to = [prometheus.remote_write.dragon_server.receiver]
-  
+  targets         = prometheus.exporter.unix.node.targets
+  forward_to      = [prometheus.relabel.instance.receiver]
   scrape_interval = "15s"
   job_name        = "node"
+}
+
+// Relabel to set consistent instance name
+// (external_labels don't override scrape-derived instance labels)
+prometheus.relabel "instance" {
+  forward_to = [prometheus.remote_write.dragon_server.receiver]
+
+  rule {
+    target_label = "instance"
+    replacement  = "YOUR_SERVER_HOSTNAME"
+  }
 }
 
 // =============================================================================
@@ -330,23 +340,20 @@ prometheus.scrape "node" {
 prometheus.remote_write "dragon_server" {
   endpoint {
     url = "https://metrics.YOUR_DRAGON_SERVER_DOMAIN/api/v1/write"
-    
+
     basic_auth {
-      username = "metrics"
+      username = "YOUR_METRICS_USERNAME"
       password = "YOUR_METRICS_PASSWORD"
     }
-  }
-
-  external_labels = {
-    instance = "YOUR_SERVER_HOSTNAME",
   }
 }
 ```
 
 **Replace these placeholders:**
 - `YOUR_DRAGON_SERVER_DOMAIN` - Your Dragon Server's domain (e.g., `thedragon.dev`)
+- `YOUR_METRICS_USERNAME` - The metrics username from `dragon-show-credentials`
 - `YOUR_METRICS_PASSWORD` - The metrics password from `dragon-show-credentials`
-- `YOUR_SERVER_HOSTNAME` - A unique identifier for this server
+- `YOUR_SERVER_HOSTNAME` - A unique identifier for this server (e.g., `web-server-01`)
 
 ### Step 3: Optional - Add Docker Metrics
 
@@ -462,7 +469,7 @@ Here's a full configuration for a typical web server with Docker and nginx:
 
 // --- System Metrics ---
 prometheus.exporter.unix "node" {
-  enable_collectors = [
+  set_collectors = [
     "cpu", "diskstats", "filesystem", "loadavg",
     "meminfo", "netdev", "netstat", "stat",
     "time", "uname", "vmstat",
@@ -470,8 +477,8 @@ prometheus.exporter.unix "node" {
 }
 
 prometheus.scrape "node" {
-  targets    = prometheus.exporter.unix.node.targets
-  forward_to = [prometheus.remote_write.dragon_server.receiver]
+  targets         = prometheus.exporter.unix.node.targets
+  forward_to      = [prometheus.relabel.instance.receiver]
   scrape_interval = "15s"
   job_name        = "node"
 }
@@ -483,18 +490,29 @@ prometheus.exporter.cadvisor "containers" {
 }
 
 prometheus.scrape "cadvisor" {
-  targets    = prometheus.exporter.cadvisor.containers.targets
-  forward_to = [prometheus.remote_write.dragon_server.receiver]
+  targets         = prometheus.exporter.cadvisor.containers.targets
+  forward_to      = [prometheus.relabel.instance.receiver]
   scrape_interval = "15s"
   job_name        = "cadvisor"
 }
 
 // --- Nginx Metrics (requires nginx-prometheus-exporter) ---
 prometheus.scrape "nginx" {
-  targets = [{"__address__" = "localhost:9113"}]
-  forward_to = [prometheus.remote_write.dragon_server.receiver]
+  targets         = [{"__address__" = "localhost:9113"}]
+  forward_to      = [prometheus.relabel.instance.receiver]
   scrape_interval = "15s"
   job_name        = "nginx"
+}
+
+// --- Relabel to set consistent instance name ---
+// (external_labels don't override scrape-derived instance labels)
+prometheus.relabel "instance" {
+  forward_to = [prometheus.remote_write.dragon_server.receiver]
+
+  rule {
+    target_label = "instance"
+    replacement  = "web-server-01"
+  }
 }
 
 // --- Remote Write ---
@@ -502,14 +520,9 @@ prometheus.remote_write "dragon_server" {
   endpoint {
     url = "https://metrics.thedragon.dev/api/v1/write"
     basic_auth {
-      username = "metrics"
-      password = "abc123secretpassword"
+      username = "your-metrics-username"
+      password = "your-metrics-password"
     }
-  }
-  external_labels = {
-    instance = "web-server-01",
-    environment = "production",
-    role = "web",
   }
 }
 ```

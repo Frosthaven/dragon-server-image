@@ -1,0 +1,239 @@
+{
+  "annotations": {
+    "list": []
+  },
+  "editable": true,
+  "fiscalYearStartMonth": 0,
+  "graphTooltip": 1,
+  "id": null,
+  "links": [],
+  "panels": [
+    {
+      "datasource": { "type": "prometheus", "uid": "P4169E866C3094E38" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "custom": {
+            "align": "auto",
+            "cellOptions": { "type": "auto" },
+            "inspect": false
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null }
+            ]
+          }
+        },
+        "overrides": [
+          {
+            "matcher": { "id": "byName", "options": "Instance" },
+            "properties": [
+              { "id": "custom.width", "value": 200 }
+            ]
+          },
+          {
+            "matcher": { "id": "byName", "options": "Uptime" },
+            "properties": [
+              { "id": "unit", "value": "dtdurations" },
+              { "id": "custom.width", "value": 120 }
+            ]
+          },
+          {
+            "matcher": { "id": "byName", "options": "CPU %" },
+            "properties": [
+              { "id": "unit", "value": "percent" },
+              { "id": "decimals", "value": 1 },
+              { "id": "max", "value": 100 },
+              { "id": "min", "value": 0 },
+              { "id": "custom.cellOptions", "value": { "mode": "gradient", "type": "gauge" } },
+              { "id": "thresholds", "value": { "mode": "absolute", "steps": [{ "color": "green", "value": null }, { "color": "yellow", "value": 70 }, { "color": "red", "value": 85 }] } }
+            ]
+          },
+          {
+            "matcher": { "id": "byName", "options": "Memory %" },
+            "properties": [
+              { "id": "unit", "value": "percent" },
+              { "id": "decimals", "value": 1 },
+              { "id": "max", "value": 100 },
+              { "id": "min", "value": 0 },
+              { "id": "custom.cellOptions", "value": { "mode": "gradient", "type": "gauge" } },
+              { "id": "thresholds", "value": { "mode": "absolute", "steps": [{ "color": "green", "value": null }, { "color": "yellow", "value": 70 }, { "color": "red", "value": 85 }] } }
+            ]
+          },
+          {
+            "matcher": { "id": "byName", "options": "Disk %" },
+            "properties": [
+              { "id": "unit", "value": "percent" },
+              { "id": "decimals", "value": 1 },
+              { "id": "max", "value": 100 },
+              { "id": "min", "value": 0 },
+              { "id": "custom.cellOptions", "value": { "mode": "gradient", "type": "gauge" } },
+              { "id": "thresholds", "value": { "mode": "absolute", "steps": [{ "color": "green", "value": null }, { "color": "yellow", "value": 70 }, { "color": "red", "value": 85 }] } }
+            ]
+          },
+          {
+            "matcher": { "id": "byName", "options": "I/O Wait %" },
+            "properties": [
+              { "id": "unit", "value": "percent" },
+              { "id": "decimals", "value": 1 },
+              { "id": "max", "value": 100 },
+              { "id": "min", "value": 0 },
+              { "id": "custom.cellOptions", "value": { "mode": "gradient", "type": "gauge" } },
+              { "id": "thresholds", "value": { "mode": "absolute", "steps": [{ "color": "green", "value": null }, { "color": "yellow", "value": 10 }, { "color": "red", "value": 25 }] } }
+            ]
+          },
+          {
+            "matcher": { "id": "byName", "options": "Containers" },
+            "properties": [
+              { "id": "unit", "value": "short" },
+              { "id": "custom.width", "value": 100 }
+            ]
+          },
+          {
+            "matcher": { "id": "byName", "options": "Pressure %" },
+            "properties": [
+              { "id": "unit", "value": "percent" },
+              { "id": "decimals", "value": 1 },
+              { "id": "custom.width", "value": 115 },
+              { "id": "custom.cellOptions", "value": { "mode": "basic", "type": "color-background" } },
+              { "id": "thresholds", "value": { "mode": "absolute", "steps": [{ "color": "green", "value": null }, { "color": "yellow", "value": 70 }, { "color": "red", "value": 85 }] } }
+            ]
+          }
+        ]
+      },
+      "gridPos": { "h": 20, "w": 24, "x": 0, "y": 0 },
+      "id": 1,
+      "options": {
+        "cellHeight": "sm",
+        "footer": {
+          "countRows": false,
+          "fields": "",
+          "reducer": ["sum"],
+          "show": false
+        },
+        "showHeader": true,
+        "sortBy": [{ "desc": true, "displayName": "Pressure %" }]
+      },
+      "pluginVersion": "10.0.0",
+      "targets": [
+        {
+          "datasource": { "type": "prometheus", "uid": "P4169E866C3094E38" },
+          "expr": "time() - node_boot_time_seconds{job=\"integrations/unix\"}",
+          "format": "table",
+          "instant": true,
+          "legendFormat": "",
+          "refId": "uptime"
+        },
+        {
+          "datasource": { "type": "prometheus", "uid": "P4169E866C3094E38" },
+          "expr": "100 - (avg by (instance) (rate(node_cpu_seconds_total{job=\"integrations/unix\",mode=\"idle\"}[5m])) * 100)",
+          "format": "table",
+          "instant": true,
+          "legendFormat": "",
+          "refId": "cpu"
+        },
+        {
+          "datasource": { "type": "prometheus", "uid": "P4169E866C3094E38" },
+          "expr": "100 * (1 - ((node_memory_MemAvailable_bytes{job=\"integrations/unix\"} or node_memory_MemFree_bytes{job=\"integrations/unix\"}) / node_memory_MemTotal_bytes{job=\"integrations/unix\"}))",
+          "format": "table",
+          "instant": true,
+          "legendFormat": "",
+          "refId": "memory"
+        },
+        {
+          "datasource": { "type": "prometheus", "uid": "P4169E866C3094E38" },
+          "expr": "100 - ((node_filesystem_avail_bytes{job=\"integrations/unix\",mountpoint=\"/\",fstype!=\"rootfs\"} * 100) / node_filesystem_size_bytes{job=\"integrations/unix\",mountpoint=\"/\",fstype!=\"rootfs\"})",
+          "format": "table",
+          "instant": true,
+          "legendFormat": "",
+          "refId": "disk"
+        },
+        {
+          "datasource": { "type": "prometheus", "uid": "P4169E866C3094E38" },
+          "expr": "avg by (instance) (rate(node_cpu_seconds_total{job=\"integrations/unix\",mode=\"iowait\"}[5m])) * 100",
+          "format": "table",
+          "instant": true,
+          "legendFormat": "",
+          "refId": "load"
+        },
+        {
+          "datasource": { "type": "prometheus", "uid": "P4169E866C3094E38" },
+          "expr": "count by (instance) (container_start_time_seconds{job=\"integrations/cadvisor\",name!=\"\"})",
+          "format": "table",
+          "instant": true,
+          "legendFormat": "",
+          "refId": "containers"
+        },
+        {
+          "datasource": { "type": "prometheus", "uid": "P4169E866C3094E38" },
+          "expr": "max by (instance) ((100 - (avg by (instance) (rate(node_cpu_seconds_total{job=\"integrations/unix\",mode=\"idle\"}[5m])) * 100)) or (100 * (1 - ((node_memory_MemAvailable_bytes{job=\"integrations/unix\"} or node_memory_MemFree_bytes{job=\"integrations/unix\"}) / node_memory_MemTotal_bytes{job=\"integrations/unix\"}))) or (100 - ((node_filesystem_avail_bytes{job=\"integrations/unix\",mountpoint=\"/\",fstype!=\"rootfs\"} * 100) / node_filesystem_size_bytes{job=\"integrations/unix\",mountpoint=\"/\",fstype!=\"rootfs\"})) or (avg by (instance) (rate(node_cpu_seconds_total{job=\"integrations/unix\",mode=\"iowait\"}[5m])) * 100))",
+          "format": "table",
+          "instant": true,
+          "legendFormat": "",
+          "refId": "pressure"
+        }
+      ],
+      "title": "Node Health",
+      "description": "**Columns:**\n- **Pressure %**: Highest of CPU/Memory/Disk/IO Wait - shows worst bottleneck\n- **CPU %**: Processor utilization\n- **Memory %**: RAM usage (excludes cache/buffers)\n- **Disk %**: Root filesystem space used\n- **I/O Wait %**: CPU time waiting for disk - high values indicate disk bottleneck\n- **Containers**: Running Docker containers",
+      "transformations": [
+        {
+          "id": "merge",
+          "options": {}
+        },
+        {
+          "id": "organize",
+          "options": {
+            "excludeByName": {
+              "Time": true,
+              "__name__": true,
+              "device": true,
+              "fstype": true,
+              "job": true,
+              "mountpoint": true
+            },
+            "indexByName": {
+              "instance": 0,
+              "Value #pressure": 1,
+              "Value #containers": 2,
+              "Value #uptime": 3,
+              "Value #cpu": 4,
+              "Value #memory": 5,
+              "Value #disk": 6,
+              "Value #load": 7
+            },
+            "renameByName": {
+              "Value #uptime": "Uptime",
+              "Value #cpu": "CPU %",
+              "Value #memory": "Memory %",
+              "Value #disk": "Disk %",
+              "Value #load": "I/O Wait %",
+              "Value #containers": "Containers",
+              "Value #pressure": "Pressure %",
+              "instance": "Instance"
+            }
+          }
+        }
+      ],
+      "type": "table"
+    }
+  ],
+  "refresh": "30s",
+  "schemaVersion": 38,
+  "style": "dark",
+  "tags": ["dragon", "public"],
+  "templating": {
+    "list": []
+  },
+  "time": {
+    "from": "now-1h",
+    "to": "now"
+  },
+  "timepicker": {},
+  "timezone": "browser",
+  "title": "Dragon Server Nodes",
+  "uid": "dragon-server-nodes",
+  "version": 1,
+  "weekStart": ""
+}

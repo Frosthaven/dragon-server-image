@@ -1,0 +1,150 @@
+{
+  "annotations": {
+    "list": []
+  },
+  "editable": true,
+  "fiscalYearStartMonth": 0,
+  "graphTooltip": 1,
+  "id": null,
+  "links": [],
+  "panels": [
+    {
+      "datasource": { "type": "prometheus", "uid": "P4169E866C3094E38" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "custom": {
+            "align": "auto",
+            "cellOptions": { "type": "auto" },
+            "inspect": false
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null }
+            ]
+          }
+        },
+        "overrides": [
+          {
+            "matcher": { "id": "byName", "options": "Instance" },
+            "properties": [
+              { "id": "custom.width", "value": 200 }
+            ]
+          },
+          {
+            "matcher": { "id": "byName", "options": "Active Bans" },
+            "properties": [
+              { "id": "unit", "value": "short" },
+              { "id": "thresholds", "value": { "mode": "absolute", "steps": [{ "color": "green", "value": null }, { "color": "yellow", "value": 100 }, { "color": "orange", "value": 500 }, { "color": "red", "value": 1000 }] } },
+              { "id": "custom.cellOptions", "value": { "mode": "basic", "type": "color-background" } }
+            ]
+          },
+          {
+            "matcher": { "id": "byName", "options": "Alerts (24h)" },
+            "properties": [
+              { "id": "unit", "value": "short" },
+              { "id": "thresholds", "value": { "mode": "absolute", "steps": [{ "color": "green", "value": null }, { "color": "yellow", "value": 10 }, { "color": "red", "value": 50 }] } },
+              { "id": "custom.cellOptions", "value": { "mode": "basic", "type": "color-background" } }
+            ]
+          },
+          {
+            "matcher": { "id": "byName", "options": "Logs Parsed (24h)" },
+            "properties": [
+              { "id": "unit", "value": "short" }
+            ]
+          }
+        ]
+      },
+      "gridPos": { "h": 20, "w": 24, "x": 0, "y": 0 },
+      "id": 10,
+      "options": {
+        "cellHeight": "sm",
+        "footer": {
+          "countRows": false,
+          "fields": "",
+          "reducer": ["sum"],
+          "show": false
+        },
+        "showHeader": true,
+        "sortBy": [{ "desc": true, "displayName": "Alerts (24h)" }]
+      },
+      "pluginVersion": "10.0.0",
+      "targets": [
+        {
+          "datasource": { "type": "prometheus", "uid": "P4169E866C3094E38" },
+          "expr": "sum by (instance) (cs_active_decisions{job=\"crowdsec\"})",
+          "format": "table",
+          "instant": true,
+          "legendFormat": "",
+          "refId": "bans"
+        },
+        {
+          "datasource": { "type": "prometheus", "uid": "P4169E866C3094E38" },
+          "expr": "sum by (instance) (increase(cs_alerts{job=\"crowdsec\"}[24h]))",
+          "format": "table",
+          "instant": true,
+          "legendFormat": "",
+          "refId": "alerts"
+        },
+        {
+          "datasource": { "type": "prometheus", "uid": "P4169E866C3094E38" },
+          "expr": "sum by (instance) (increase(cs_parser_hits_total{job=\"crowdsec\"}[24h]))",
+          "format": "table",
+          "instant": true,
+          "legendFormat": "",
+          "refId": "logs"
+        }
+      ],
+      "title": "Security Status",
+      "transformations": [
+        {
+          "id": "merge",
+          "options": {}
+        },
+        {
+          "id": "organize",
+          "options": {
+            "excludeByName": {
+              "Time": true,
+              "__name__": true,
+              "action": true,
+              "job": true,
+              "name": true,
+              "origin": true,
+              "reason": true,
+              "source": true,
+              "type": true
+            },
+            "indexByName": {},
+            "renameByName": {
+              "Value #bans": "Active Bans",
+              "Value #alerts": "Alerts (24h)",
+              "Value #logs": "Logs Parsed (24h)",
+              "instance": "Instance"
+            }
+          }
+        }
+      ],
+      "type": "table"
+    }
+  ],
+  "refresh": "30s",
+  "schemaVersion": 38,
+  "style": "dark",
+  "tags": ["dragon", "public", "security"],
+  "templating": {
+    "list": []
+  },
+  "time": {
+    "from": "now-1h",
+    "to": "now"
+  },
+  "timepicker": {},
+  "timezone": "browser",
+  "title": "Dragon Server Security",
+  "uid": "dragon-server-security",
+  "version": 1,
+  "weekStart": ""
+}

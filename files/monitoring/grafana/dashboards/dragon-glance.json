@@ -52,6 +52,7 @@
             "matcher": { "id": "byName", "options": "CPU %" },
             "properties": [
               { "id": "unit", "value": "percent" },
+              { "id": "decimals", "value": 1 },
               { "id": "max", "value": 100 },
               { "id": "min", "value": 0 },
               { "id": "custom.cellOptions", "value": { "mode": "gradient", "type": "gauge" } },
@@ -62,6 +63,7 @@
             "matcher": { "id": "byName", "options": "Memory %" },
             "properties": [
               { "id": "unit", "value": "percent" },
+              { "id": "decimals", "value": 1 },
               { "id": "max", "value": 100 },
               { "id": "min", "value": 0 },
               { "id": "custom.cellOptions", "value": { "mode": "gradient", "type": "gauge" } },
@@ -72,6 +74,7 @@
             "matcher": { "id": "byName", "options": "Disk %" },
             "properties": [
               { "id": "unit", "value": "percent" },
+              { "id": "decimals", "value": 1 },
               { "id": "max", "value": 100 },
               { "id": "min", "value": 0 },
               { "id": "custom.cellOptions", "value": { "mode": "gradient", "type": "gauge" } },
@@ -79,13 +82,14 @@
             ]
           },
           {
-            "matcher": { "id": "byName", "options": "Load 1m" },
+            "matcher": { "id": "byName", "options": "I/O Wait %" },
             "properties": [
-              { "id": "unit", "value": "short" },
-              { "id": "decimals", "value": 2 },
-              { "id": "custom.width", "value": 80 },
-              { "id": "thresholds", "value": { "mode": "absolute", "steps": [{ "color": "green", "value": null }, { "color": "yellow", "value": 1 }, { "color": "red", "value": 2 }] } },
-              { "id": "custom.cellOptions", "value": { "mode": "basic", "type": "color-background" } }
+              { "id": "unit", "value": "percent" },
+              { "id": "decimals", "value": 1 },
+              { "id": "max", "value": 100 },
+              { "id": "min", "value": 0 },
+              { "id": "custom.cellOptions", "value": { "mode": "gradient", "type": "gauge" } },
+              { "id": "thresholds", "value": { "mode": "absolute", "steps": [{ "color": "green", "value": null }, { "color": "yellow", "value": 10 }, { "color": "red", "value": 25 }] } }
             ]
           },
           {
@@ -94,10 +98,20 @@
               { "id": "unit", "value": "short" },
               { "id": "custom.width", "value": 100 }
             ]
+          },
+          {
+            "matcher": { "id": "byName", "options": "Pressure %" },
+            "properties": [
+              { "id": "unit", "value": "percent" },
+              { "id": "decimals", "value": 1 },
+              { "id": "custom.width", "value": 115 },
+              { "id": "custom.cellOptions", "value": { "mode": "basic", "type": "color-background" } },
+              { "id": "thresholds", "value": { "mode": "absolute", "steps": [{ "color": "green", "value": null }, { "color": "yellow", "value": 70 }, { "color": "red", "value": 85 }] } }
+            ]
           }
         ]
       },
-      "gridPos": { "h": 6, "w": 24, "x": 0, "y": 1 },
+      "gridPos": { "h": 23, "w": 24, "x": 0, "y": 1 },
       "id": 1,
       "options": {
         "cellHeight": "sm",
@@ -108,7 +122,7 @@
           "show": false
         },
         "showHeader": true,
-        "sortBy": [{ "desc": false, "displayName": "Instance" }]
+        "sortBy": [{ "desc": true, "displayName": "Pressure %" }]
       },
       "pluginVersion": "10.0.0",
       "targets": [
@@ -146,7 +160,7 @@
         },
         {
           "datasource": { "type": "prometheus", "uid": null },
-          "expr": "node_load1{job=\"integrations/unix\",instance=~\"$instance\"}",
+          "expr": "avg by (instance) (rate(node_cpu_seconds_total{job=\"integrations/unix\",mode=\"iowait\",instance=~\"$instance\"}[5m])) * 100",
           "format": "table",
           "instant": true,
           "legendFormat": "",
@@ -159,9 +173,18 @@
           "instant": true,
           "legendFormat": "",
           "refId": "containers"
+        },
+        {
+          "datasource": { "type": "prometheus", "uid": null },
+          "expr": "max by (instance) ((100 - (avg by (instance) (rate(node_cpu_seconds_total{job=\"integrations/unix\",mode=\"idle\",instance=~\"$instance\"}[5m])) * 100)) or (100 * (1 - ((node_memory_MemAvailable_bytes{job=\"integrations/unix\",instance=~\"$instance\"} or node_memory_MemFree_bytes{job=\"integrations/unix\",instance=~\"$instance\"}) / node_memory_MemTotal_bytes{job=\"integrations/unix\",instance=~\"$instance\"}))) or (100 - ((node_filesystem_avail_bytes{job=\"integrations/unix\",mountpoint=\"/\",fstype!=\"rootfs\",instance=~\"$instance\"} * 100) / node_filesystem_size_bytes{job=\"integrations/unix\",mountpoint=\"/\",fstype!=\"rootfs\",instance=~\"$instance\"})) or (avg by (instance) (rate(node_cpu_seconds_total{job=\"integrations/unix\",mode=\"iowait\",instance=~\"$instance\"}[5m])) * 100))",
+          "format": "table",
+          "instant": true,
+          "legendFormat": "",
+          "refId": "pressure"
         }
       ],
       "title": "Node Health",
+      "description": "**Columns:**\n- **Pressure %**: Highest of CPU/Memory/Disk/IO Wait - shows worst bottleneck\n- **CPU %**: Processor utilization\n- **Memory %**: RAM usage (excludes cache/buffers)\n- **Disk %**: Root filesystem space used\n- **I/O Wait %**: CPU time waiting for disk - high values indicate disk bottleneck\n- **Containers**: Running Docker containers",
       "transformations": [
         {
           "id": "merge",
@@ -178,14 +201,24 @@
               "job": true,
               "mountpoint": true
             },
-            "indexByName": {},
+            "indexByName": {
+              "instance": 0,
+              "Value #pressure": 1,
+              "Value #containers": 2,
+              "Value #uptime": 3,
+              "Value #cpu": 4,
+              "Value #memory": 5,
+              "Value #disk": 6,
+              "Value #load": 7
+            },
             "renameByName": {
               "Value #uptime": "Uptime",
               "Value #cpu": "CPU %",
               "Value #memory": "Memory %",
               "Value #disk": "Disk %",
-              "Value #load": "Load 1m",
+              "Value #load": "I/O Wait %",
               "Value #containers": "Containers",
+              "Value #pressure": "Pressure %",
               "instance": "Instance"
             }
           }
@@ -195,7 +228,7 @@
     },
     {
       "collapsed": false,
-      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 7 },
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 24 },
       "id": 101,
       "panels": [],
       "title": "Security (CrowdSec)",
@@ -251,7 +284,7 @@
           }
         ]
       },
-      "gridPos": { "h": 5, "w": 24, "x": 0, "y": 8 },
+      "gridPos": { "h": 12, "w": 24, "x": 0, "y": 25 },
       "id": 10,
       "options": {
         "cellHeight": "sm",
@@ -262,7 +295,7 @@
           "show": false
         },
         "showHeader": true,
-        "sortBy": [{ "desc": false, "displayName": "Instance" }]
+        "sortBy": [{ "desc": true, "displayName": "Alerts (24h)" }]
       },
       "pluginVersion": "10.0.0",
       "targets": [
@@ -326,7 +359,7 @@
     },
     {
       "collapsed": false,
-      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 13 },
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 37 },
       "id": 102,
       "panels": [],
       "title": "Resource Trends",
@@ -369,7 +402,7 @@
         },
         "overrides": []
       },
-      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 14 },
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 38 },
       "id": 20,
       "options": {
         "legend": { "calcs": ["mean", "max"], "displayMode": "table", "placement": "bottom", "showLegend": true },
@@ -428,7 +461,7 @@
         },
         "overrides": []
       },
-      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 14 },
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 38 },
       "id": 21,
       "options": {
         "legend": { "calcs": ["mean", "max"], "displayMode": "table", "placement": "bottom", "showLegend": true },
@@ -454,7 +487,7 @@
     },
     {
       "collapsed": false,
-      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 22 },
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 46 },
       "id": 103,
       "panels": [],
       "title": "Docker Containers",
@@ -495,7 +528,7 @@
         },
         "overrides": []
       },
-      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 23 },
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 47 },
       "id": 30,
       "options": {
         "legend": { "calcs": ["mean"], "displayMode": "table", "placement": "right", "showLegend": true },
@@ -548,7 +581,7 @@
         },
         "overrides": []
       },
-      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 23 },
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 47 },
       "id": 31,
       "options": {
         "legend": { "calcs": ["mean"], "displayMode": "table", "placement": "right", "showLegend": true },
@@ -638,7 +671,7 @@
           }
         ]
       },
-      "gridPos": { "h": 8, "w": 24, "x": 0, "y": 31 },
+      "gridPos": { "h": 23, "w": 24, "x": 0, "y": 55 },
       "id": 32,
       "options": {
         "cellHeight": "sm",

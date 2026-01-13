@@ -36,6 +36,7 @@
           {
             "matcher": { "id": "byName", "options": "Active Bans" },
             "properties": [
+              { "id": "custom.width", "value": 125 },
               { "id": "unit", "value": "short" },
               { "id": "thresholds", "value": { "mode": "absolute", "steps": [{ "color": "green", "value": null }, { "color": "yellow", "value": 100 }, { "color": "orange", "value": 500 }, { "color": "red", "value": 1000 }] } },
               { "id": "custom.cellOptions", "value": { "mode": "basic", "type": "color-background" } }
@@ -44,6 +45,7 @@
           {
             "matcher": { "id": "byName", "options": "Alerts (24h)" },
             "properties": [
+              { "id": "custom.width", "value": 125 },
               { "id": "unit", "value": "short" },
               { "id": "thresholds", "value": { "mode": "absolute", "steps": [{ "color": "green", "value": null }, { "color": "yellow", "value": 10 }, { "color": "red", "value": 50 }] } },
               { "id": "custom.cellOptions", "value": { "mode": "basic", "type": "color-background" } }

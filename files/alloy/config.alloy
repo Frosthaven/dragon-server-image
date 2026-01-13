@@ -1,0 +1,93 @@
+// Grafana Alloy Configuration for Dragon Server
+// This configuration collects metrics from various sources and sends them to VictoriaMetrics
+
+// ============================================================================
+// PROMETHEUS EXPORTERS
+// ============================================================================
+
+// Node Exporter - System metrics (CPU, memory, disk, network, etc.)
+prometheus.exporter.unix "node" {
+  enable_collectors = [
+    "boottime",      // System boot time (for uptime calculation)
+    "cpu",           // CPU usage statistics
+    "diskstats",     // Disk I/O statistics
+    "filesystem",    // Filesystem usage
+    "loadavg",       // System load averages
+    "meminfo",       // Memory usage statistics
+    "netdev",        // Network device statistics
+    "netstat",       // Network statistics
+    "os",            // OS release information
+    "pressure",      // PSI (Pressure Stall Information) metrics
+    "stat",          // Various system statistics
+    "time",          // System time
+    "uname",         // System information (kernel, hostname, etc.)
+    "vmstat",        // Virtual memory statistics
+  ]
+}
+
+// cAdvisor - Docker container metrics
+prometheus.exporter.cadvisor "containers" {
+  docker_host = "unix:///var/run/docker.sock"
+  storage_duration = "5m"
+}
+
+// ============================================================================
+// SCRAPE CONFIGURATIONS
+// ============================================================================
+
+// Scrape node metrics from unix exporter
+prometheus.scrape "node" {
+  targets    = prometheus.exporter.unix.node.targets
+  forward_to = [prometheus.remote_write.victoriametrics.receiver]
+  
+  scrape_interval = "15s"
+  job_name        = "integrations/unix"
+}
+
+// Scrape container metrics from cAdvisor exporter
+prometheus.scrape "cadvisor" {
+  targets    = prometheus.exporter.cadvisor.containers.targets
+  forward_to = [prometheus.remote_write.victoriametrics.receiver]
+  
+  scrape_interval = "15s"
+  job_name        = "integrations/cadvisor"
+}
+
+// Scrape Caddy metrics
+prometheus.scrape "caddy" {
+  targets = [
+    {"__address__" = "localhost:2019"},
+  ]
+  forward_to = [prometheus.remote_write.victoriametrics.receiver]
+  
+  scrape_interval = "15s"
+  job_name        = "caddy"
+  metrics_path    = "/metrics"
+}
+
+// Scrape CrowdSec metrics
+prometheus.scrape "crowdsec" {
+  targets = [
+    {"__address__" = "localhost:6060"},
+  ]
+  forward_to = [prometheus.remote_write.victoriametrics.receiver]
+  
+  scrape_interval = "15s"
+  job_name        = "crowdsec"
+  metrics_path    = "/metrics"
+}
+
+// ============================================================================
+// REMOTE WRITE
+// ============================================================================
+
+// Send all metrics to local VictoriaMetrics
+prometheus.remote_write "victoriametrics" {
+  endpoint {
+    url = "http://localhost:8428/api/v1/write"
+  }
+
+  external_labels = {
+    instance = "__HOSTNAME__",
+  }
+}

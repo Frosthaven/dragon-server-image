@@ -18,6 +18,8 @@ MARKER_DIR="/var/lib/dragon"
 MARKER_DOMAIN_CONFIGURED="$MARKER_DIR/.domain-configured"
 MARKER_USER_SETUP_COMPLETE="$MARKER_DIR/.user-setup-complete"
 MARKER_CROWDSEC_CONFIGURED="$MARKER_DIR/.crowdsec-configured"
+MARKER_MONITORING_CONFIGURED="$MARKER_DIR/.monitoring-configured"
+MARKER_ALLOY_CONFIGURED="$MARKER_DIR/.alloy-configured"
 MARKER_SETUP_COMPLETE="/startup_configured"
 
 function ensureMarkerDir() {
@@ -57,6 +59,43 @@ function showSecurityStatus() {
   echo ""
 }
 
+function showMonitoringStatus() {
+  echo -e "${GREEN}Monitoring Stack status:${NORMAL}"
+  
+  # Check if VictoriaMetrics is running
+  if docker ps --format '{{.Names}}' 2>/dev/null | grep -q "victoriametrics"; then
+    vm_status="${GREEN}running${NORMAL}"
+  else
+    vm_status="${RED}stopped${NORMAL}"
+  fi
+  
+  # Check if Grafana is running
+  if docker ps --format '{{.Names}}' 2>/dev/null | grep -q "grafana"; then
+    grafana_status="${GREEN}running${NORMAL}"
+  else
+    grafana_status="${RED}stopped${NORMAL}"
+  fi
+  
+  # Check if Alloy is running
+  if systemctl is-active --quiet alloy; then
+    alloy_status="${GREEN}running${NORMAL}"
+  else
+    alloy_status="${RED}stopped${NORMAL}"
+  fi
+  
+  echo "  VictoriaMetrics     $vm_status"
+  echo "  Grafana             $grafana_status"
+  echo "  Alloy Agent         $alloy_status"
+  
+  # Show dashboard URL if configured
+  if [ -f "$MARKER_DIR/.domain" ]; then
+    domain=$(cat "$MARKER_DIR/.domain")
+    echo ""
+    echo "  Dashboard:          ${CYAN}https://grafana.$domain${NORMAL}"
+  fi
+  echo ""
+}
+
 function showWelcomeScreen() {
   cd /var/www/containers || exit
   showBanner
@@ -69,11 +108,16 @@ function showWelcomeScreen() {
   
   showSecurityStatus
   
+  # Show monitoring status if configured
+  if [ -f "$MARKER_MONITORING_CONFIGURED" ] || [ -f "$MARKER_ALLOY_CONFIGURED" ]; then
+    showMonitoringStatus
+  fi
+  
   echo "Caddy Server Files    ${YELLOW}/var/www/_caddy/${NORMAL}"
   echo "Hosted Containers     ${YELLOW}/var/www/containers${NORMAL}"
   echo "Hosted Static Files   ${YELLOW}/var/www/static${NORMAL}"
   echo ""
-  echo "${BLUE}$(sudo docker ps)${NORMAL}"
+  echo "${CYAN}Tip: Run 'dragon-show-credentials' to view saved credentials${NORMAL}"
   echo ""
 }
 
@@ -165,6 +209,102 @@ function configureCrowdSec() {
   
   # Mark CrowdSec configuration as complete
   touch "$MARKER_CROWDSEC_CONFIGURED"
+}
+
+function configureMonitoringDashboard() {
+  echo ""
+  echo "${GREEN}――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――${NORMAL}"
+  echo "${GREEN}Monitoring Dashboard Setup (VictoriaMetrics + Grafana)${NORMAL}"
+  echo "${GREEN}――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――${NORMAL}"
+  echo ""
+  
+  echo "This will set up a monitoring dashboard with:"
+  echo "  - VictoriaMetrics (Prometheus-compatible metrics storage)"
+  echo "  - Grafana (visualization dashboards)"
+  echo "  - Pre-configured dashboards for Node, Docker, CrowdSec"
+  echo ""
+  echo -n "Set up monitoring dashboard? (Y/n): "
+  read -r setup_choice
+  
+  if [[ "$setup_choice" =~ ^[Nn]$ ]]; then
+    echo ""
+    echo "Skipping monitoring dashboard setup."
+    echo "You can set it up later by running:"
+    echo "  ${YELLOW}sudo /usr/local/bin/monitoring-first-boot.sh${NORMAL}"
+    echo ""
+    # Still mark as configured to skip in future runs
+    touch "$MARKER_MONITORING_CONFIGURED"
+    return
+  fi
+  
+  echo ""
+  echo "Initializing monitoring stack..."
+  sudo /usr/local/bin/monitoring-first-boot.sh
+  
+  echo ""
+  echo "${GREEN}Monitoring dashboard configured!${NORMAL}"
+  echo ""
+  
+  # Show the credentials
+  if [ -f "/var/www/containers/monitoring/.credentials" ]; then
+    echo "Your monitoring credentials:"
+    echo ""
+    cat /var/www/containers/monitoring/.credentials | grep -v "^#" | grep -v "^$"
+    echo ""
+    echo "${YELLOW}Save these credentials! You can view them later with:${NORMAL}"
+    echo "  ${CYAN}dragon-show-credentials${NORMAL}"
+    echo ""
+  fi
+  
+  echo "Press Enter to continue..."
+  read -r
+  
+  # Mark as configured
+  touch "$MARKER_MONITORING_CONFIGURED"
+}
+
+function configureAlloy() {
+  echo ""
+  echo "${GREEN}――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――${NORMAL}"
+  echo "${GREEN}Metrics Collection Setup (Grafana Alloy)${NORMAL}"
+  echo "${GREEN}――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――${NORMAL}"
+  echo ""
+  
+  echo "This will enable Grafana Alloy to collect metrics from:"
+  echo "  - System (CPU, memory, disk, network)"
+  echo "  - Docker containers"
+  echo "  - Caddy web server"
+  echo "  - CrowdSec security engine"
+  echo ""
+  echo -n "Enable metrics collection? (Y/n): "
+  read -r setup_choice
+  
+  if [[ "$setup_choice" =~ ^[Nn]$ ]]; then
+    echo ""
+    echo "Skipping metrics collection setup."
+    echo "You can enable it later by running:"
+    echo "  ${YELLOW}sudo /usr/local/bin/alloy-first-boot.sh${NORMAL}"
+    echo ""
+    # Still mark as configured to skip in future runs
+    touch "$MARKER_ALLOY_CONFIGURED"
+    return
+  fi
+  
+  echo ""
+  echo "Configuring Alloy metrics agent..."
+  sudo /usr/local/bin/alloy-first-boot.sh
+  
+  echo ""
+  echo "${GREEN}Metrics collection enabled!${NORMAL}"
+  echo ""
+  echo "Alloy is now collecting metrics and sending them to VictoriaMetrics."
+  echo "View your dashboards at your Grafana URL."
+  echo ""
+  echo "Press Enter to continue..."
+  read -r
+  
+  # Mark as configured
+  touch "$MARKER_ALLOY_CONFIGURED"
 }
 
 function configureDomain() {
@@ -262,6 +402,22 @@ function configureServer() {
     configureCrowdSec
   else
     echo "${GREEN}CrowdSec configuration already complete. Resuming setup...${NORMAL}"
+    echo ""
+  fi
+
+  # Step 4: Monitoring dashboard setup (VictoriaMetrics + Grafana)
+  if [ ! -f "$MARKER_MONITORING_CONFIGURED" ]; then
+    configureMonitoringDashboard
+  else
+    echo "${GREEN}Monitoring dashboard already configured. Resuming setup...${NORMAL}"
+    echo ""
+  fi
+
+  # Step 5: Alloy metrics collection
+  if [ ! -f "$MARKER_ALLOY_CONFIGURED" ]; then
+    configureAlloy
+  else
+    echo "${GREEN}Alloy metrics collection already configured. Resuming setup...${NORMAL}"
     echo ""
   fi
 

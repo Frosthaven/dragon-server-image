@@ -387,6 +387,174 @@
           group: root
           mode: 0755
 
+      - name: "Enable CrowdSec Prometheus metrics"
+        blockinfile:
+          path: /etc/crowdsec/config.yaml
+          marker: "# {mark} ANSIBLE MANAGED - Prometheus metrics"
+          insertafter: "^prometheus:"
+          block: |2
+              enabled: true
+              level: full
+              listen_addr: 127.0.0.1
+              listen_port: 6060
+
+- name: "Install Grafana Alloy"
+  hosts: all
+  become: true
+  tasks:
+    - block:
+      - name: "Add Grafana GPG apt Key"
+        shell: |
+          curl -fsSL https://apt.grafana.com/gpg.key | gpg --dearmor -o /usr/share/keyrings/grafana-archive-keyring.gpg
+        args:
+          creates: /usr/share/keyrings/grafana-archive-keyring.gpg
+
+      - name: "Add Grafana Repository"
+        copy:
+          dest: /etc/apt/sources.list.d/grafana.list
+          content: |
+            deb [signed-by=/usr/share/keyrings/grafana-archive-keyring.gpg] https://apt.grafana.com stable main
+          owner: root
+          group: root
+          mode: 0644
+
+      - name: "Install Grafana Alloy"
+        apt:
+          name: alloy
+          state: present
+          update_cache: yes
+
+      - name: "Add alloy user to docker group"
+        user:
+          name: alloy
+          groups: docker
+          append: yes
+
+      - name: "Create Alloy systemd override directory"
+        file:
+          path: /etc/systemd/system/alloy.service.d
+          state: directory
+          owner: root
+          group: root
+          mode: 0755
+
+      - name: "Configure Alloy to run as root (required for cAdvisor)"
+        copy:
+          dest: /etc/systemd/system/alloy.service.d/override.conf
+          content: |
+            [Service]
+            User=root
+            Group=root
+          owner: root
+          group: root
+          mode: 0644
+
+      - name: "Deploy Alloy configuration template"
+        copy:
+          src: "files/alloy/config.alloy"
+          dest: "/etc/alloy/config.alloy"
+          owner: root
+          group: root
+          mode: 0644
+
+      - name: "Stop Alloy service (will start on first boot)"
+        systemd:
+          name: alloy
+          state: stopped
+          enabled: no
+          daemon_reload: yes
+
+      - name: "Copy Alloy first-boot script"
+        copy:
+          src: "scripts/alloy-first-boot.sh"
+          dest: "/usr/local/bin/alloy-first-boot.sh"
+          owner: root
+          group: root
+          mode: 0755
+
+- name: "Deploy Monitoring Stack"
+  hosts: all
+  become: true
+  tasks:
+    - block:
+      - name: "Create monitoring directory"
+        file:
+          path: /var/www/containers/monitoring
+          state: directory
+          owner: dragon
+          group: dragon
+          mode: 0755
+
+      - name: "Create monitoring subdirectories"
+        file:
+          path: "{{ item }}"
+          state: directory
+          owner: dragon
+          group: dragon
+          mode: 0755
+        loop:
+          - "/var/www/containers/monitoring/grafana"
+          - "/var/www/containers/monitoring/grafana/provisioning"
+          - "/var/www/containers/monitoring/grafana/provisioning/datasources"
+          - "/var/www/containers/monitoring/grafana/provisioning/dashboards"
+          - "/var/www/containers/monitoring/grafana/dashboards"
+
+      - name: "Copy monitoring docker-compose.yml"
+        copy:
+          src: "files/monitoring/docker-compose.yml"
+          dest: "/var/www/containers/monitoring/docker-compose.yml"
+          owner: dragon
+          group: dragon
+          mode: 0644
+
+      - name: "Copy monitoring .env template"
+        copy:
+          src: "files/monitoring/.env.template"
+          dest: "/var/www/containers/monitoring/.env.template"
+          owner: dragon
+          group: dragon
+          mode: 0644
+
+      - name: "Copy Grafana datasource provisioning"
+        copy:
+          src: "files/monitoring/grafana/provisioning/datasources/victoriametrics.yml"
+          dest: "/var/www/containers/monitoring/grafana/provisioning/datasources/victoriametrics.yml"
+          owner: dragon
+          group: dragon
+          mode: 0644
+
+      - name: "Copy Grafana dashboard provisioning"
+        copy:
+          src: "files/monitoring/grafana/provisioning/dashboards/dashboards.yml"
+          dest: "/var/www/containers/monitoring/grafana/provisioning/dashboards/dashboards.yml"
+          owner: dragon
+          group: dragon
+          mode: 0644
+
+      - name: "Copy Grafana dashboards"
+        copy:
+          src: "files/monitoring/grafana/dashboards/"
+          dest: "/var/www/containers/monitoring/grafana/dashboards/"
+          owner: dragon
+          group: dragon
+          mode: 0644
+
+      - name: "Copy monitoring first-boot script"
+        copy:
+          src: "scripts/monitoring-first-boot.sh"
+          dest: "/usr/local/bin/monitoring-first-boot.sh"
+          owner: root
+          group: root
+          mode: 0755
+
+      - name: "Copy dragon-show-credentials script"
+        copy:
+          src: "scripts/dragon-show-credentials"
+          dest: "/usr/local/bin/dragon-show-credentials"
+          owner: root
+          group: root
+          mode: 0755
+
 - name: "Install Python"
   hosts: all
   become: true

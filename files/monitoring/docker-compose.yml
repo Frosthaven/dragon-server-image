@@ -1,0 +1,47 @@
+services:
+  victoriametrics:
+    image: victoriametrics/victoria-metrics:latest
+    container_name: victoriametrics
+    restart: unless-stopped
+    volumes:
+      - victoriametrics-data:/victoria-metrics-data
+    command:
+      - "-storageDataPath=/victoria-metrics-data"
+      - "-retentionPeriod=90d"
+      - "-httpListenAddr=:8428"
+    ports:
+      - "127.0.0.1:8428:8428"
+    labels:
+      caddy: "${METRICS_DOMAIN}"
+      caddy.basicauth: "*"
+      caddy.basicauth.${METRICS_USER}: "${METRICS_PASSWORD_HASH}"
+      caddy.reverse_proxy: "{{upstreams 8428}}"
+
+  grafana:
+    image: grafana/grafana:latest
+    container_name: grafana
+    restart: unless-stopped
+    environment:
+      - GF_SECURITY_ADMIN_USER=${GRAFANA_USER}
+      - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_PASSWORD}
+      - GF_SERVER_ROOT_URL=https://${GRAFANA_DOMAIN}
+      - GF_USERS_ALLOW_SIGN_UP=false
+      - GF_AUTH_ANONYMOUS_ENABLED=false
+    volumes:
+      - grafana-data:/var/lib/grafana
+      - ./grafana/provisioning:/etc/grafana/provisioning:ro
+      - ./grafana/dashboards:/var/lib/grafana/dashboards:ro
+    labels:
+      caddy: "${GRAFANA_DOMAIN}"
+      caddy.reverse_proxy: "{{upstreams 3000}}"
+    depends_on:
+      - victoriametrics
+
+volumes:
+  victoriametrics-data:
+  grafana-data:
+
+networks:
+  default:
+    name: caddy
+    external: true

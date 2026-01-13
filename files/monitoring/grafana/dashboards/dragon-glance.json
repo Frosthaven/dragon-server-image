@@ -242,12 +242,7 @@
               { "id": "custom.cellOptions", "value": { "mode": "basic", "type": "color-background" } }
             ]
           },
-          {
-            "matcher": { "id": "byName", "options": "Attacks Blocked (24h)" },
-            "properties": [
-              { "id": "unit", "value": "short" }
-            ]
-          },
+
           {
             "matcher": { "id": "byName", "options": "Logs Parsed (24h)" },
             "properties": [
@@ -287,14 +282,7 @@
           "legendFormat": "",
           "refId": "alerts"
         },
-        {
-          "datasource": { "type": "prometheus", "uid": null },
-          "expr": "sum by (instance) (increase(cs_bucket_overflowed_total{job=\"crowdsec\",instance=~\"$instance\"}[24h]))",
-          "format": "table",
-          "instant": true,
-          "legendFormat": "",
-          "refId": "attacks"
-        },
+
         {
           "datasource": { "type": "prometheus", "uid": null },
           "expr": "sum by (instance) (increase(cs_parser_hits_total{job=\"crowdsec\",instance=~\"$instance\"}[24h]))",
@@ -328,7 +316,6 @@
             "renameByName": {
               "Value #bans": "Active Bans",
               "Value #alerts": "Alerts (24h)",
-              "Value #attacks": "Attacks Blocked (24h)",
               "Value #logs": "Logs Parsed (24h)",
               "instance": "Instance"
             }

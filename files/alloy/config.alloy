@@ -10,15 +10,19 @@ prometheus.exporter.unix "node" {
   enable_collectors = [
     "boottime",      // System boot time (for uptime calculation)
     "cpu",           // CPU usage statistics
+    "cpufreq",       // CPU frequency scaling metrics
     "diskstats",     // Disk I/O statistics
     "filesystem",    // Filesystem usage
+    "interrupts",    // Hardware interrupts statistics
     "loadavg",       // System load averages
     "meminfo",       // Memory usage statistics
     "netdev",        // Network device statistics
     "netstat",       // Network statistics
     "os",            // OS release information
     "pressure",      // PSI (Pressure Stall Information) metrics
+    "processes",     // Process statistics (for processes memory panel)
     "stat",          // Various system statistics
+    "systemd",       // Systemd unit and socket statistics
     "time",          // System time
     "uname",         // System information (kernel, hostname, etc.)
     "vmstat",        // Virtual memory statistics

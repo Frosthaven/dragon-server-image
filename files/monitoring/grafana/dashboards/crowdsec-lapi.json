@@ -104,8 +104,6 @@
         "text": {}
       },
       "pluginVersion": "8.1.2",
-      "repeat": "query0",
-      "repeatDirection": "h",
       "targets": [
         {
           "exemplar": false,
@@ -188,6 +186,7 @@
       "title": "Decisions",
       "type": "row"
     },
+
     {
       "datasource": "VictoriaMetrics",
       "fieldConfig": {
@@ -216,64 +215,6 @@
         "h": 8,
         "w": 12,
         "x": 0,
-        "y": 10
-      },
-      "id": 4,
-      "options": {
-        "displayMode": "gradient",
-        "orientation": "auto",
-        "reduceOptions": {
-          "calcs": [
-            "lastNotNull"
-          ],
-          "fields": "",
-          "values": false
-        },
-        "showUnfilled": false,
-        "text": {}
-      },
-      "pluginVersion": "8.1.2",
-      "targets": [
-        {
-          "exemplar": true,
-          "expr": "sum(rate(cs_lapi_request_duration_seconds_bucket{endpoint= \"/v1/decisions\", instance=\"$lapi\", method=~\"(GET)|(HEAD)\"}[$__rate_interval])) by (le)",
-          "format": "heatmap",
-          "interval": "",
-          "legendFormat": "{{le}}",
-          "refId": "A"
-        }
-      ],
-      "title": "Decisions GET (live)",
-      "type": "heatmap"
-    },
-    {
-      "datasource": "VictoriaMetrics",
-      "fieldConfig": {
-        "defaults": {
-          "color": {
-            "mode": "thresholds"
-          },
-          "mappings": [],
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              {
-                "color": "green",
-                "value": null
-              },
-              {
-                "color": "red",
-                "value": 80
-              }
-            ]
-          }
-        },
-        "overrides": []
-      },
-      "gridPos": {
-        "h": 8,
-        "w": 12,
-        "x": 12,
         "y": 10
       },
       "id": 13,
@@ -331,8 +272,8 @@
       "gridPos": {
         "h": 8,
         "w": 12,
-        "x": 0,
-        "y": 18
+        "x": 12,
+        "y": 10
       },
       "id": 8,
       "options": {
@@ -369,7 +310,7 @@
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 26
+        "y": 18
       },
       "id": 15,
       "panels": [],
@@ -404,7 +345,7 @@
         "h": 8,
         "w": 12,
         "x": 0,
-        "y": 27
+        "y": 19
       },
       "id": 17,
       "options": {
@@ -462,7 +403,7 @@
         "h": 8,
         "w": 12,
         "x": 12,
-        "y": 27
+        "y": 19
       },
       "id": 18,
       "options": {
@@ -529,7 +470,7 @@
   },
   "timepicker": {},
   "timezone": "",
-  "title": "LAPI Metrics",
+  "title": "CrowdSec API Metrics",
   "uid": null,
   "version": 11
 }

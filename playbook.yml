@@ -33,7 +33,7 @@
           state: directory
           owner: "{{ ansible_user }}"
           group: "{{ ansible_user }}"
-          mode: 0755
+          mode: 0775
         loop:
           - "/var/www"
           - "/var/www/static"
@@ -483,7 +483,7 @@
           state: directory
           owner: dragon
           group: dragon
-          mode: 0755
+          mode: 0775
 
       - name: "Create monitoring subdirectories"
         file:
@@ -491,7 +491,7 @@
           state: directory
           owner: dragon
           group: dragon
-          mode: 0755
+          mode: 0775
         loop:
           - "/var/www/containers/monitoring/grafana"
           - "/var/www/containers/monitoring/grafana/provisioning"

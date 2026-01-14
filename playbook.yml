@@ -49,6 +49,37 @@
           group: "{{ ansible_user }}"
           mode: 0644
 
+- name: "Configure Swap"
+  hosts: all
+  become: true
+  tasks:
+    - block:
+      - name: "Check if swap file exists"
+        stat:
+          path: /swapfile
+        register: swap_file
+      - name: "Create 2GB swap file"
+        command: fallocate -l 2G /swapfile
+        when: not swap_file.stat.exists
+      - name: "Set swap file permissions"
+        file:
+          path: /swapfile
+          mode: '0600'
+        when: not swap_file.stat.exists
+      - name: "Format swap file"
+        command: mkswap /swapfile
+        when: not swap_file.stat.exists
+      - name: "Enable swap file"
+        command: swapon /swapfile
+        when: not swap_file.stat.exists
+        ignore_errors: yes
+      - name: "Add swap to fstab"
+        lineinfile:
+          path: /etc/fstab
+          line: '/swapfile none swap sw 0 0'
+          state: present
+          create: yes
+
 - name: "Configure UFW Firewall"
   hosts: all
   become: true

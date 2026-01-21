@@ -72,6 +72,11 @@ Metrics Endpoint (for external scrapers):
   URL: https://metrics.$DOMAIN
   Username: metrics
   Password: $METRICS_PASSWORD
+
+DNS Requirements:
+  Create CNAME records pointing to your domain:
+    grafana.$DOMAIN -> $DOMAIN
+    metrics.$DOMAIN -> $DOMAIN
 EOF
 
 chmod 600 "$CREDENTIALS_FILE"
@@ -117,6 +122,11 @@ touch "$MARKER_FILE"
 
 echo ""
 echo "Monitoring stack configured successfully!"
+echo ""
+echo "DNS Requirements:"
+echo "  Create CNAME records pointing to your domain:"
+echo "    grafana.$DOMAIN -> $DOMAIN"
+echo "    metrics.$DOMAIN -> $DOMAIN"
 echo ""
 echo "Your credentials have been saved to:"
 echo "  $CREDENTIALS_FILE"

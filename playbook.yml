@@ -419,15 +419,17 @@
           mode: 0755
 
       - name: "Enable CrowdSec Prometheus metrics"
-        blockinfile:
-          path: /etc/crowdsec/config.yaml
-          marker: "# {mark} ANSIBLE MANAGED - Prometheus metrics"
-          insertafter: "^prometheus:"
-          block: |2
-              enabled: true
-              level: full
-              listen_addr: 127.0.0.1
-              listen_port: 6060
+        shell: |
+          # Modify the prometheus section in CrowdSec config
+          # This handles both commented and uncommented values in the default config
+          sed -i '/^prometheus:/,/^[a-z]/ {
+            s/^#\?\(\s*enabled:\).*/  enabled: true/
+            s/^#\?\(\s*level:\).*/  level: full/
+            s/^#\?\(\s*listen_addr:\).*/  listen_addr: 127.0.0.1/
+            s/^#\?\(\s*listen_port:\).*/  listen_port: 6060/
+          }' /etc/crowdsec/config.yaml
+        args:
+          executable: /bin/bash
 
 - name: "Install Grafana Alloy"
   hosts: all

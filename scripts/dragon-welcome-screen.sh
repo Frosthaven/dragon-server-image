@@ -129,7 +129,6 @@ function configureCrowdSec() {
   echo ""
   
   # Initialize CrowdSec (register bouncer, start services)
-  echo "Initializing CrowdSec security engine..."
   sudo /usr/local/bin/crowdsec-first-boot.sh
   
   echo ""

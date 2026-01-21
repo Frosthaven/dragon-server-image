@@ -393,11 +393,11 @@
               - INPUT
               - DOCKER-USER
 
-      - name: "Stop CrowdSec services (will start on first boot)"
+      - name: "Disable CrowdSec services (will start on first boot)"
         systemd:
           name: "{{ item }}"
           state: stopped
-          enabled: yes
+          enabled: no
         loop:
           - crowdsec
           - crowdsec-firewall-bouncer

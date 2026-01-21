@@ -22,9 +22,9 @@ fi
 
 echo "Initializing CrowdSec security engine..."
 
-# Step 1: Start CrowdSec engine
+# Step 1: Enable and start CrowdSec engine
 if ! systemctl is-active --quiet crowdsec; then
-    systemctl start crowdsec
+    systemctl enable --now crowdsec
 fi
 
 # Wait for CrowdSec LAPI to be ready (up to 120 seconds)
@@ -79,9 +79,9 @@ echo "$BOUNCER_NAME" > "$BOUNCER_CONFIG.id"
 
 echo "Bouncer registered successfully."
 
-# Step 4: Start the firewall bouncer
+# Step 4: Start and enable the firewall bouncer
 echo "Starting firewall bouncer..."
-systemctl start crowdsec-firewall-bouncer
+systemctl enable --now crowdsec-firewall-bouncer
 
 # Verify bouncer is running
 if systemctl is-active --quiet crowdsec-firewall-bouncer; then

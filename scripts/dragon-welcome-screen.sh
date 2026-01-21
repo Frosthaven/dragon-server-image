@@ -338,8 +338,8 @@ function configureDomain() {
   fi
 
   # Save the configured domain for reference and to detect if already configured
-  echo "$base_domain" > "$MARKER_DIR/domain"
-  echo "$admin_email" > "$MARKER_DIR/email"
+  echo "$base_domain" > "$MARKER_DIR/.domain"
+  echo "$admin_email" > "$MARKER_DIR/.email"
 
   # start the whoami container
   cd /var/www/containers/whoami && docker compose up -d

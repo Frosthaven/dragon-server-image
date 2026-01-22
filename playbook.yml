@@ -797,6 +797,12 @@
         systemd:
           daemon_reload: yes
 
+      - name: "Enable and start Caddy service"
+        systemd:
+          name: caddy
+          enabled: yes
+          state: started
+
 - name: "Configure Caddy & Docker"
   hosts: all
   become: true

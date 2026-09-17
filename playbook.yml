@@ -505,6 +505,66 @@
           group: root
           mode: 0644
 
+      # gungnir security-layer collector: a read-only detector writing normalized
+      # gungnir_security_* gauges into the Alloy textfile dir (scraped by the
+      # gungnir_security exporter in config.alloy). Product-generic, not tied to
+      # any single gungnir instance.
+      - name: "Create Alloy textfile directory"
+        ansible.builtin.file:
+          path: /var/lib/alloy/textfile
+          state: directory
+          owner: root
+          group: root
+          mode: "0755"
+
+      - name: "Install gungnir security-layer collector"
+        ansible.builtin.copy:
+          src: "files/gungnir/gungnir-security-metrics.sh"
+          dest: /usr/local/bin/gungnir-security-metrics.sh
+          owner: root
+          group: root
+          mode: "0755"
+
+      - name: "Install gungnir security collector service"
+        ansible.builtin.copy:
+          dest: /etc/systemd/system/gungnir-security-metrics.service
+          owner: root
+          group: root
+          mode: "0644"
+          content: |
+            [Unit]
+            Description=Collect gungnir security-layer metrics into the node_exporter textfile dir
+            After=network.target
+
+            [Service]
+            Type=oneshot
+            ExecStart=/usr/local/bin/gungnir-security-metrics.sh
+
+      - name: "Install gungnir security collector timer"
+        ansible.builtin.copy:
+          dest: /etc/systemd/system/gungnir-security-metrics.timer
+          owner: root
+          group: root
+          mode: "0644"
+          content: |
+            [Unit]
+            Description=Run the gungnir security-layer metrics collector every 5 minutes
+
+            [Timer]
+            OnBootSec=30
+            OnUnitActiveSec=300
+            AccuracySec=30
+
+            [Install]
+            WantedBy=timers.target
+
+      - name: "Enable gungnir security collector timer (starts on first boot)"
+        ansible.builtin.systemd:
+          name: gungnir-security-metrics.timer
+          enabled: yes
+          state: stopped
+          daemon_reload: yes
+
       - name: "Stop Alloy service (will start on first boot)"
         systemd:
           name: alloy

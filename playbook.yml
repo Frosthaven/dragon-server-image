@@ -383,15 +383,30 @@
           group: root
           mode: 0644
 
-      - name: "Configure firewall bouncer for Docker (add DOCKER-USER chain)"
-        blockinfile:
+      # Uncomment the DOCKER-USER chain in the package's own iptables_chains list
+      # rather than adding a second iptables_chains block. A duplicate mapping key
+      # is fatal to crowdsec-firewall-bouncer 0.0.36+ ("iptables_chains already
+      # defined"); the older bouncer only tolerated it.
+      - name: "Enable the DOCKER-USER chain in the firewall bouncer"
+        ansible.builtin.replace:
           path: /etc/crowdsec/bouncers/crowdsec-firewall-bouncer.yaml
-          marker: "# {mark} ANSIBLE MANAGED - iptables chains config"
-          insertafter: "^#iptables_chains:"
-          block: |
-            iptables_chains:
-              - INPUT
-              - DOCKER-USER
+          regexp: '^#(\s*-\s*DOCKER-USER)'
+          replace: '\1'
+
+      # Keep the engine and bouncer current from the CrowdSec apt repo, so a
+      # long-lived box does not drift onto an old release.
+      - name: "Keep CrowdSec current via unattended-upgrades"
+        ansible.builtin.copy:
+          dest: /etc/apt/apt.conf.d/52crowdsec-unattended
+          owner: root
+          group: root
+          mode: "0644"
+          content: |
+            APT::Periodic::Update-Package-Lists "1";
+            APT::Periodic::Unattended-Upgrade "1";
+            Unattended-Upgrade::Origins-Pattern {
+              "origin=packagecloud.io/crowdsec/crowdsec";
+            };
 
       - name: "Disable CrowdSec services (will start on first boot)"
         systemd:

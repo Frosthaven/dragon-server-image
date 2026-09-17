@@ -75,10 +75,32 @@ prometheus.scrape "crowdsec" {
     {"__address__" = "localhost:6060"},
   ]
   forward_to = [prometheus.remote_write.victoriametrics.receiver]
-  
+
   scrape_interval = "15s"
   job_name        = "crowdsec"
   metrics_path    = "/metrics"
+}
+
+// gungnir security-layer metrics. A read-only detector
+// (/usr/local/bin/gungnir-security-metrics.sh, run by a systemd timer) writes
+// normalized gungnir_security_* gauges for whichever security layers the box
+// runs into the textfile dir; this second unix exporter reads only that dir, so
+// the node exporter above is untouched. The gungnir_security_* names are the
+// gungnir product's, not instance-specific: whichever store this box ships to
+// reads them.
+prometheus.exporter.unix "gungnir_security" {
+  set_collectors = ["textfile"]
+  textfile {
+    directory = "/var/lib/alloy/textfile"
+  }
+}
+
+prometheus.scrape "gungnir_security" {
+  targets    = prometheus.exporter.unix.gungnir_security.targets
+  forward_to = [prometheus.remote_write.victoriametrics.receiver]
+
+  scrape_interval = "60s"
+  job_name        = "gungnir_security"
 }
 
 // ============================================================================

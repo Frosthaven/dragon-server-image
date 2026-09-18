@@ -565,6 +565,60 @@
           state: stopped
           daemon_reload: yes
 
+      # gungnir container-state collector: a read-only detector that asks the
+      # Docker engine for each container's real lifecycle state (running /
+      # paused / restarting / exited), which cAdvisor cannot tell apart, and
+      # writes a gungnir_container_state gauge into the same textfile dir the
+      # gungnir_security exporter scrapes. No-ops on a box with no Docker.
+      - name: "Install gungnir container-state collector"
+        ansible.builtin.copy:
+          src: "files/gungnir/gungnir-container-metrics.sh"
+          dest: /usr/local/bin/gungnir-container-metrics.sh
+          owner: root
+          group: root
+          mode: "0755"
+
+      - name: "Install gungnir container collector service"
+        ansible.builtin.copy:
+          dest: /etc/systemd/system/gungnir-container-metrics.service
+          owner: root
+          group: root
+          mode: "0644"
+          content: |
+            [Unit]
+            Description=Collect gungnir container-state metrics into the node_exporter textfile dir
+            After=docker.service
+            Wants=docker.service
+
+            [Service]
+            Type=oneshot
+            ExecStart=/usr/local/bin/gungnir-container-metrics.sh
+
+      - name: "Install gungnir container collector timer"
+        ansible.builtin.copy:
+          dest: /etc/systemd/system/gungnir-container-metrics.timer
+          owner: root
+          group: root
+          mode: "0644"
+          content: |
+            [Unit]
+            Description=Run the gungnir container-state metrics collector every 60 seconds
+
+            [Timer]
+            OnBootSec=30
+            OnUnitActiveSec=60
+            AccuracySec=10
+
+            [Install]
+            WantedBy=timers.target
+
+      - name: "Enable gungnir container collector timer (starts on first boot)"
+        ansible.builtin.systemd:
+          name: gungnir-container-metrics.timer
+          enabled: yes
+          state: stopped
+          daemon_reload: yes
+
       - name: "Stop Alloy service (will start on first boot)"
         systemd:
           name: alloy

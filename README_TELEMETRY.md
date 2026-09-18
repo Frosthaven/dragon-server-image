@@ -36,8 +36,17 @@ Alloy collects metrics from:
 |--------|---------|
 | **Node/System** | CPU, memory, disk, network, load averages |
 | **Docker** | Container CPU, memory, network, I/O via cAdvisor |
+| **Docker (state)** | Each container's lifecycle state (running / paused / restarting / exited) via `docker ps`, as `gungnir_container_state` |
 | **Caddy** | HTTP requests, response times, active connections |
 | **CrowdSec** | Blocked IPs, parsed logs, active decisions |
+| **Security layers** | Bans and denials from CrowdSec, fail2ban, CSF, ModSecurity, Imunify, as `gungnir_security_*` |
+
+Two read-only collectors run on a timer and write into the Alloy textfile
+directory (`/var/lib/alloy/textfile`), which a `textfile` exporter scrapes: one
+for the security layers a box runs, and one for container lifecycle state (asks
+the Docker engine directly, since cAdvisor can only tell a running container
+from a gone one). Both no-op cleanly where the thing they report is absent (no
+security layer, or no Docker), so they are safe to bake into every image.
 
 ---
 
